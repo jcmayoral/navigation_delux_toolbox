@@ -2,60 +2,65 @@
 #include <ros/ros.h>
 
 namespace mode_monitor{
-  ModeMonitor::ModeMonitor(): costmap_(), tf_(ros::Duration(10)){
+  ModeMonitor::ModeMonitor(): costmap_(), tf_(ros::Duration(10)), is_costmap_received_(false){
     ROS_INFO("Constructor");
-    //costmap_ros_ = new costmap_2d::Costmap2DROS("global_costmap", tf_);
-    std::cout << "constructor";
-    //costmap_ros_->start();
-    //costmap_ = costmap_ros_->getCostmap();
-    //costmap_ros_->updateMap();
     ros::NodeHandle nh("");
     //"/move_base/global_costmap/costmap"
     costmap_sub_ = nh.subscribe("/map", 1, &ModeMonitor::costmapCB,this);
     point_debug_ = nh.advertise<nav_msgs::OccupancyGrid>("point_debug", 1);
-    ros::spin();
+    ros::spinOnce();
+    //ros::spin();
+  }
+
+  void ModeMonitor::run(){
+    if (is_costmap_received_){
+      check(0,0);
+    }
+  }
+
+
+  void ModeMonitor::check(double wx, double wy){
+    unsigned int mx, my = 0;
+    costmap_->worldToMap(wx, wy,mx, my);
+
+    grid_msg_.data[costmap_->getIndex(mx,my)] = 100; //TODO
+    ROS_INFO_STREAM("COST " << (int)costmap_->getCost(mx,my)<< " coord " << mx << ", "<<my);
+
+    grid_msg_.header.stamp = ros::Time::now();
+    //point.data = &array;
+    point_debug_.publish(grid_msg_);
   }
 
   void ModeMonitor::costmapCB(const nav_msgs::OccupancyGridConstPtr& input_costmap_){
-    ROS_INFO("Inside CB");
-    //tf::Stamped< tf::Pose > global_pose;
-    //geometry_msgs::PoseStamped global_pose_stamped;
-    //costmap_ros_->getRobotPose (global_pose);
-    //tf::poseStampedTFToMsg(global_pose, global_pose_stamped);
-    ROS_INFO("here1");
-    nav_msgs::OccupancyGrid point;
     costmap_ = new costmap_2d::Costmap2D(input_costmap_->info.width,
                                         input_costmap_->info.height,
                                         input_costmap_->info.resolution,
                                         input_costmap_->info.origin.position.x,
                                         input_costmap_->info.origin.position.y,
                                         0);
-    //costmap_->costmap_ = input_costmap_->data;
-    int array[input_costmap_->info.width * input_costmap_->info.height];
+    grid_msg_.data.clear();
 
-    for (int i =0; i< input_costmap_->info.width; ++i){
-        for (int j =0; j< input_costmap_->info.height; ++j){
-          costmap_->setCost(i, j, input_costmap_->data[i*j+i]);
-          point.data.push_back(0);//array[i*j+1] = 0;//input_costmap_->data[i*j+i]);
-          ROS_DEBUG_STREAM((int)costmap_->getCost(i,j));
-        }
+    uint x, y;
+
+    for (int i =0; i< input_costmap_->info.width * input_costmap_->info.height; ++i){
+      costmap_->indexToCells(i,x,y);
+      costmap_->setCost(x, y, input_costmap_->data[i]);
+      grid_msg_.data.push_back(input_costmap_->data[i]);//array[i*j+1] = 0;//input_costmap_->data[i*j+i]);
+      ROS_DEBUG_STREAM((int)costmap_->getCost(x,y));
     }
-    ROS_INFO("here1");
-    double wx = 0;//7.077;
-    double wy = 0;///1.661;
-    unsigned int mx, my = 0;
 
-    costmap_->worldToMap(wx, wy,mx, my);
-    ROS_INFO_STREAM("here1" << "here" << (int)costmap_->getCost(mx,my));
-    point.data[costmap_->getIndex(mx,my)] = 100;
-    costmap_->mapToWorld(mx, my,wx, wy);
+    ROS_INFO("Map has been copied successfully");
 
-    point.info = input_costmap_->info;
-    point.header.stamp = ros::Time::now();
-    point.header.frame_id = "map";
-    //point.data = &array;
-    point_debug_.publish(point);
+    //Filling Msg
+     grid_msg_.header.frame_id = "map";
+    grid_msg_.info.resolution = costmap_->getResolution();
+    grid_msg_.info.width = costmap_->getSizeInCellsX();
+    grid_msg_.info.height = costmap_->getSizeInCellsY();
+    grid_msg_.info.origin.position.x = costmap_->getOriginX();
+    grid_msg_.info.origin.position.y = costmap_->getOriginY();
 
+    is_costmap_received_ = true;
+    costmap_sub_.shutdown();
   }
 
   ModeMonitor::~ModeMonitor(){

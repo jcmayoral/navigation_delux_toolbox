@@ -12,13 +12,16 @@ namespace mode_monitor{
       ModeMonitor();
       ~ModeMonitor();
       void costmapCB(const nav_msgs::OccupancyGridConstPtr& input_costmap_);
+      void run();
+      void check(double wx, double wy);
 
     private:
       costmap_2d::Costmap2D* costmap_;
-      costmap_2d::Costmap2DROS* costmap_ros_;
       tf::TransformListener tf_;
       ros::Subscriber costmap_sub_;
       ros::Publisher point_debug_;
+      bool is_costmap_received_;
+      nav_msgs::OccupancyGrid grid_msg_;
 
   };
 };
