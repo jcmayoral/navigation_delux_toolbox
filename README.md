@@ -1,9 +1,12 @@
-This repository is a collection on useful autonomous navigation tools. Most of them are based on the navigation stack developed by ROS, called move_base. The packages provided on the current repository are an extension that attempts to provide a toolbox to increase the functionalities of a mobile robot platform. 
+This repository is a collection on useful autonomous navigation tools. Most of them are developed for navigation tasks, some are possibly extendable for other robotic domains.
 
+This is basically a repository with 
 
 * Status
 
 On development
+
+* roslaunch_mode_switcher : allows to switch between mode provided by different launch files, i.e. move_base and gmapping.
 
 
 * Expected Nodes.
