@@ -6,15 +6,19 @@ import os
 
 
 class NavigationMode:
-    def __init__(self, package = None, launch_file = None):
-        rospy.init_node('en_Mapping', anonymous=True)
+    def __init__(self, package = None, route_to_launch_file = None):
         #rospy.on_shutdown(self.shutdown)
         self.uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         roslaunch.configure_logging(self.uuid)
-        self.launch = roslaunch.parent.ROSLaunchParent(self.uuid, ["/home/jose/ros_ws/src/mas_domestic_robotics/mdr_navigation/mdr_2dslam/ros/launch/2dslam.launch"])
+        package_path = rospkg.RosPack().get_path(package)
+
+        self.launch = roslaunch.parent.ROSLaunchParent(self.uuid, [package_path + "/" + route_to_launch_file])
 
     def start(self):
-        self.launch.start()
+        try:
+            self.launch.start()
+        except:
+            rospy.logerr("Launch file not started")
 
     def stop(self):
         self.launch.shutdown()
