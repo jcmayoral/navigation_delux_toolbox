@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslint
   roscpp
   costmap_2d
+  nav_msgs
   tf
 )
 
@@ -23,6 +24,7 @@ catkin_package(
    std_msgs
    costmap_2d
    tf
+   nav_msgs
 )
 
 add_library(mode_monitor_ros
