@@ -1,0 +1,4 @@
+std_msgs/String request_mode
+---
+---
+std_msgs/Bool succeeded 

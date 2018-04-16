@@ -1,0 +1,10 @@
+#! /usr/bin/python
+from roslaunch_mode_switcher_ros.mode_switcher import RosLaunchMode
+import rospy
+
+if __name__ == '__main__':
+  rospy.init_node('navigation_mode_switcher_test', anonymous=True)
+  mode = RosLaunchMode(package = 'mdr_2dslam', route_to_launch_file = 'ros/launch/2dslam.launch')
+  mode.start()
+  rospy.sleep(10)
+  mode.stop()
