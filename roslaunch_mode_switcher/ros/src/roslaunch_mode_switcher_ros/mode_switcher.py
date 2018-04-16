@@ -5,7 +5,7 @@ import rospkg
 import os
 
 
-class NavigationMode:
+class RosLaunchMode:
     def __init__(self, package = None, route_to_launch_file = None):
         #rospy.on_shutdown(self.shutdown)
         self.uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)

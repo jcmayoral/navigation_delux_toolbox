@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(navigation_mode_switcher)
+project(roslaunch_mode_switcher)
 
 find_package(catkin REQUIRED COMPONENTS
   actionlib
