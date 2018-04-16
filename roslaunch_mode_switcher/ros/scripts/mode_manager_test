@@ -1,0 +1,8 @@
+#! /usr/bin/python
+from roslaunch_mode_switcher_ros.mode_manager import ModeManager
+import rospy
+
+if __name__ == '__main__':
+  rospy.init_node('manager_mode_switcher_test', anonymous=True)
+  mode = ModeManager(config_file='navigation_modes.yaml')
+  rospy.spin()

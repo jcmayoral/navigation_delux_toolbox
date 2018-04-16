@@ -26,7 +26,12 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+install(DIRECTORY ros/config
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/ros/config
+)
+
 install(PROGRAMS
   ros/scripts/node_launcher_test
+  ros/scripts/mode_manager_test
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/scripts
 )

@@ -4,14 +4,12 @@ import rospy
 import rospkg
 import os
 
-
 class RosLaunchMode:
     def __init__(self, package = None, route_to_launch_file = None):
-        #rospy.on_shutdown(self.shutdown)
+        rospy.loginfo("Constructor of RosLaunchMode")
         self.uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         roslaunch.configure_logging(self.uuid)
         package_path = rospkg.RosPack().get_path(package)
-
         self.launch = roslaunch.parent.ROSLaunchParent(self.uuid, [package_path + "/" + route_to_launch_file])
 
     def start(self):

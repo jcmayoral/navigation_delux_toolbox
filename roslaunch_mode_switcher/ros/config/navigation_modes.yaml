@@ -1,0 +1,6 @@
+Slam:
+  package: mdr_2dslam
+  path_to_file: ros/launch/2dslam.launch
+Navigation:
+  package: mdr_2dnav
+  path_to_file: ros/launch/2dnav.launch
