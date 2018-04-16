@@ -6,7 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   genmsg
   message_generation
-  geometry_msgs
+  std_msgs
   roslint
   rospy
 )
@@ -14,17 +14,29 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_python_setup()
 roslint_python()
 
+add_service_files(
+  FILES
+  ModeSwitcher.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+)
+
 
 catkin_package(
  CATKIN_DEPENDS
    actionlib_msgs
    message_runtime
-   geometry_msgs
+   std_msgs
 )
+
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
+
 
 install(DIRECTORY ros/config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/ros/config

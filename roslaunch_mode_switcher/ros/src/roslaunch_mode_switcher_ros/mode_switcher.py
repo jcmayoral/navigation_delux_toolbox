@@ -2,7 +2,6 @@
 import roslaunch
 import rospy
 import rospkg
-import os
 
 class RosLaunchMode:
     def __init__(self, package = None, route_to_launch_file = None):
@@ -15,7 +14,8 @@ class RosLaunchMode:
     def start(self):
         try:
             self.launch.start()
-        except:
+        except Exception as e:
+            print(e)
             rospy.logerr("Launch file not started")
 
     def stop(self):
