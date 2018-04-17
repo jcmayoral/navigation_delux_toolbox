@@ -8,6 +8,7 @@ On development
 
 * roslaunch_mode_switcher : allows to switch between mode provided by different launch files, i.e. move_base and gmapping.
 
+![output](https://user-images.githubusercontent.com/14136339/38873136-5d6f8e82-4255-11e8-9629-1236237d83d5.gif)
 
 * Expected Nodes.
 
@@ -15,3 +16,5 @@ On development
 -> multi_map_navigation.
 -> Multi Robot HMI.
 -> Trajectory Follower.
+
+
