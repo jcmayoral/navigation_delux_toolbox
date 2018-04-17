@@ -14,6 +14,8 @@ namespace mode_monitor{
       void costmapCB(const nav_msgs::OccupancyGridConstPtr& input_costmap_);
       void run();
       void check(double wx, double wy);
+      bool getTransform(double& x, double& y);
+
 
     private:
       costmap_2d::Costmap2D* costmap_;

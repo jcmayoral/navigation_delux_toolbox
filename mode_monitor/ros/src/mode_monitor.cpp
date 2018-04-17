@@ -14,7 +14,33 @@ namespace mode_monitor{
 
   void ModeMonitor::run(){
     if (is_costmap_received_){
-      check(0,0);
+      double x,y = 0.0;
+      if(getTransform(x,y)){
+        check(x,y);
+      }
+    }
+  }
+
+  bool ModeMonitor::getTransform(double& x, double& y){
+    tf::TransformListener listener;
+
+    ros::Rate rate(10.0);
+    tf::StampedTransform transform;
+
+    listener.waitForTransform("/base_link", "/map",
+                              ros::Time(0), ros::Duration(1.0));
+
+    try{
+      listener.lookupTransform("/base_link", "/map",
+                               ros::Time(0), transform);
+      x = transform.getOrigin().x();
+      y = transform.getOrigin().x();
+      return true;
+    }
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+      ros::Duration(1.0).sleep();
+      return false;
     }
   }
 
