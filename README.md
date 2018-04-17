@@ -8,7 +8,7 @@ On development
 
 * roslaunch_mode_switcher : allows to switch between mode provided by different launch files, i.e. move_base and gmapping.
 
-![output](https://user-images.githubusercontent.com/14136339/38873935-381cb202-4257-11e8-90a8-bc3c2d87ae23.gif)
+![output](https://user-images.githubusercontent.com/14136339/38874322-190dfffa-4258-11e8-8825-1d64800b36aa.gif)
 
 * Expected Nodes.
 
