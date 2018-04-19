@@ -2,5 +2,8 @@ Slam:
   package: mir_2dslam
   path_to_file: ros/launch/2dslam.launch
 Navigation:
-  package: mir_2dnav
-  path_to_file: ros/launch/2dnav.launch
+  package: multi_map_server
+  path_to_file: launch/multi_map_server.launch
+SaveMap:
+  package: mcr_navigation_tools
+  path_to_file: ros/launch/map_server.launch
