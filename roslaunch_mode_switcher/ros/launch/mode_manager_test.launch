@@ -3,14 +3,14 @@
 <launch>
   <arg name="config_file" default="$(find roslaunch_mode_switcher)/ros/config/navigation_modes.yaml" />
 
-  <node pkg="tf" type="static_transform_publisher"
+  <!--node pkg="tf" type="static_transform_publisher"
         name="mode_manager_test" args="0 0 0 0 0 0 odom map 0.1" output="screen">
-  </node>
-
-
-  <!--node pkg="roslaunch_mode_switcher" type="mode_manager_test"
-        name="tf_map_odom" output="screen">
-    <param name="config_file" type="str" value="$(arg config_file)"/>
   </node-->
+
+
+  <node pkg="roslaunch_mode_switcher" type="mode_manager_test"
+        name="mode_switcher" output="screen">
+    <param name="config_file" type="str" value="$(arg config_file)"/>
+  </node>
 
 </launch>

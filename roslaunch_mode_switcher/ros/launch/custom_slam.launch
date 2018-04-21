@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="tf" type="static_transform_publisher"
+        name="mode_manager_test" args="0 0 0 0 0 0 odom base_footprint 0.1" output="screen">
+  </node>
+
+  <include file="$(find mir_2dslam)/ros/launch/2dslam.launch">
+  </include>
+
+</launch>
