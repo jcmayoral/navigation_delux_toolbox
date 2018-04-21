@@ -16,19 +16,19 @@ class MultiMapManager(object):
         self.current_map_name_pub = rospy.Publisher("multi_map_server/map_name", String, queue_size=1)
         self.wormhole_marker_pub = rospy.Publisher('wormhole_marker', MarkerArray, queue_size=1)
         self.n_markers = 0
-        
+
         self.transition_action_clients = {}
         transitions = ["door_blast", "elevator_blast", "door_drag"]
 
         if rospy.has_param('~transition_types'):
             transitions = rospy.get_param("~transition_types").split(" ")
-        
- 
+
+
         for client in transitions:
             if (client.strip() == ""):
                 continue
             rospy.loginfo("Waiting for " + client)
- 
+
             if (client.strip() == "custom"):
                 rospy.loginfo("Adding Custom with MultiMapServerAction")
                 cli = actionlib.SimpleActionClient(client, MultiMapServerAction)
@@ -139,9 +139,9 @@ class MultiMapManager(object):
 
                 waiting_area_marker = Marker()
                 waiting_area_marker = Marker.DELETE
-                waiting_area_marker.id = self.n_markers
+                #waiting_area_marker.id = self.n_markers
 
-                self.wormhole_marker_pub.publish(wormhole_marker)
+                #self.wormhole_marker_pub.publish(wormhole_marker)
         self.n_markers = n_markers
 
     def loadyaml(self, filename):

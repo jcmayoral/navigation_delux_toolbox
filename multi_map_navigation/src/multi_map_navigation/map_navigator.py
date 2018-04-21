@@ -103,7 +103,7 @@ class MultiMapNavigationNavigator():
         self.graph.node[goal.goal_map]['y'] = goal.target_pose.pose.position.y
 
         self.graph.add_edge(goal.goal_map,"end",weight = 0)
-        self.plotGraph()
+        #self.plotGraph()
 
         try:
             path = nx.astar_path(self.graph, "start", "end")
@@ -129,6 +129,7 @@ class MultiMapNavigationNavigator():
             name = path[0][path[0].find("_") + 1:]
             #wormhole = None
             for i in self.manager.wormholes:
+                print i["name"], self.manager.current_map, "pashfpiashfpi"
                 if (i["name"] == self.manager.current_map):
                     wormhole = i
             print "looking for" , self.manager.current_map ,"in" , wormhole["locations"]
@@ -320,6 +321,9 @@ class MultiMapNavigationNavigator():
     def afterSwitchingMap(self,mapname, location, wormhole, offset):
         #Create and publish the new pose for AMCL
         print "Switching Maps"
+        l = tf.TransformListener()
+        l.waitForTransform("/map", "/odom", rospy.Time(0), rospy.Duration(4.0))
+        print "Transform received"
         msg = PoseWithCovarianceStamped()
         msg.header.frame_id = "/map"
         msg.header.stamp = rospy.get_rostime()
@@ -361,15 +365,15 @@ class MultiMapNavigationNavigator():
                                0.0, 0.0, 0.0, 0.0, 0.0,
                                0.06853891945200942]
         emptySrv = Empty()
-        rospy.wait_for_service("/global_localization")
-
-        try:
-            init_amcl = rospy.ServiceProxy("/global_localization", Empty)
-            init_amcl()
-            pass
-        except:
-            rospy.logerr("Could not re-initialize AMCL")
-
+        # rospy.wait_for_service("/global_localization")
+        #
+        # try:
+        #     init_amcl = rospy.ServiceProxy("/global_localization", Empty)
+        #     init_amcl()
+        #     pass
+        # except:
+        #     rospy.logerr("Could not re-initialize AMCL")
+        #
         rospy.loginfo("%s pretend to publsh ", msg.pose.pose)
         self.pose_pub.publish(msg)
 

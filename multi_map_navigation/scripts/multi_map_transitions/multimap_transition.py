@@ -27,20 +27,32 @@ import rospy
 import actionlib
 from multi_map_navigation.msg import *
 from std_msgs.msg import String
+from roslaunch_mode_switcher.srv import ModeSwitcher
 
 class MultiMapControl:
     def __init__(self):
         self.ac_server = actionlib.SimpleActionServer("custom", MultiMapServerAction, execute_cb=self.call_multiMap, auto_start=False)
         rospy.loginfo("Initializing Multimap Transition")
         # This relies on the 'dynamic_gazebo_models' package
-        self.pub_map = rospy.Publisher('multi_map_server/map_name', String, queue_size=1)
+        self.pub_map = rospy.Publisher('mode_manager_server/map_name', String, queue_size=1)
         self.ac_server.start()
         rospy.loginfo("Started actionlib server")
 
     def call_multiMap(self, msg):
-        self.pub_map.publish(msg.map_name)
-        rospy.loginfo("Waiting transition to finish...")
-        self.ac_server.set_succeeded()
+        if msg.map_name == "unknown":
+            client_ = rospy.ServiceProxy('request_mode', ModeSwitcher)
+            goal = String()
+            goal.data = "Slam"
+            resp1 = client_(goal)
+            client_.wait_for_service()
+            rospy.loginfo("waiting 3 seconds for transformations")
+            rospy.sleep(3)
+            self.ac_server.set_succeeded()
+
+        else:
+            self.pub_map.publish(msg.map_name)
+            rospy.loginfo("Waiting transition to finish...")
+            self.ac_server.set_succeeded()
 
 if __name__ == '__main__':
     rospy.init_node("custom")

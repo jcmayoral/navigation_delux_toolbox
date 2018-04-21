@@ -3,6 +3,6 @@
 
     <!-- set robot environment -->
     <arg name="init_map" default="kitchen"/>
-    <include file="$(find mdr_2dnav)/ros/launch/amcl.launch" />
+    <include file="$(find mir_2dnav)/ros/launch/amcl.launch" />
 
 </launch>
