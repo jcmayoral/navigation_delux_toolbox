@@ -12,19 +12,19 @@ class ModeManager:
             rospy.logerr("You must specify a definition_file")
             return
         stream = file(config_file, 'r')
-        modes = yaml.load(stream)
+        self.modes = yaml.load(stream)
         self.available_modes = dict()
         stream.close()
 
+        for key, value in self.modes.iteritems():
+            print key
+            if key == default:
+                print "jere"
+                self.available_modes[key] = RosLaunchMode(package = value['package'],
+                                                      route_to_launch_file = value['path_to_file'])
         self.current_mode = default
         self.is_stop_requested = False
-
-        for key, value in modes.iteritems():
-            print type(key), key
-            self.available_modes[key] = RosLaunchMode(package = value['package'],
-                                                      route_to_launch_file = value['path_to_file'])
-
-
+        self.available_modes[default].start()
         self.request_mode = rospy.Service('request_mode', ModeSwitcher, self.runService)
 
 
@@ -39,9 +39,20 @@ class ModeManager:
             resp.succeeded.data = True
             return resp
 
-        if self.current_mode is not None:
-            self.available_modes[self.current_mode].stop()
+        for key, value in self.modes.iteritems():
+            if key == req.request_mode.data:
+                self.available_modes[key] = RosLaunchMode(package = value['package'],
+                                                      route_to_launch_file = value['path_to_file'])
 
+        if req.request_mode.data == "SaveMap":
+            self.available_modes[req.request_mode.data].start()
+            rospy.loginfo("Saving map")
+            rospy.sleep(3)
+            return resp
+
+        self.available_modes[self.current_mode].stop()
         self.available_modes[req.request_mode.data].start()
         self.current_mode = req.request_mode.data
+        print("DONE")
+
         return resp

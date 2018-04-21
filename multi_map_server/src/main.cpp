@@ -230,15 +230,15 @@ class MultiMapServer
 class Manager{
   public:
     std::string fname;
+    std::string path_;
     std::string map_name;
     double res;
     ros::Subscriber sub;
     bool isTriggered;
 
     void mapCB (const std_msgs::String::ConstPtr& msg){
-      std::string path = ros::package::getPath("multi_map_navigation");
       if (map_name.compare(msg->data.c_str())){
-        fname = path +"/maps/partial-c069-maps/" + msg->data.c_str() + "/map.yaml";
+        fname = path_ + msg->data.c_str() + "/map.yaml";
         isTriggered = true;
         ROS_INFO_STREAM("New Map Path " << fname);
         ROS_INFO_STREAM("New Map Name " << map_name);
@@ -246,8 +246,9 @@ class Manager{
       }
     };
 
-    Manager(ros::NodeHandle nh): fname(), res(), isTriggered(true){
+    Manager(ros::NodeHandle nh, std::string path): fname(), res(), isTriggered(true){
       ROS_INFO("Manager constructor");
+      path_ = path + "/";
       sub = nh.subscribe("map_name", 1000, &Manager::mapCB, this);
 
     };
@@ -265,11 +266,15 @@ int main(int argc, char **argv)
   }
 
   MultiMapServer ms;
-  Manager manager(nh);
-  manager.res = (argc == 2) ? 0.0 : atof(argv[2]);
 
-  std::string path = ros::package::getPath("multi_map_navigation");
-  manager.fname = path +"/maps/partial-c069-maps/" + argv[1] + "/map.yaml";
+  std::string package;
+
+  nh.getParam("maps_package", package);
+  std::string path = ros::package::getPath(package);
+  std::cout << path;
+  Manager manager(nh, path);
+  manager.res = (argc == 2) ? 0.0 : atof(argv[2]);
+  manager.fname = manager.path_ + argv[1] + "/map.yaml";
   ROS_INFO_STREAM("Path " << manager.fname);
   manager.map_name = argv[1];
   ROS_INFO_STREAM("Map Name " << manager.map_name);
