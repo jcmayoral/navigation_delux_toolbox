@@ -12,6 +12,10 @@
     <include file="$(find multi_map_navigation)/launch/multi_map_common.launch">
     </include>
 
+    <node pkg="tf" type="static_transform_publisher"
+          name="mode_manager_test" args="0 0 0 0 0 0 odom map 0.1" output="screen">
+    </node>
+
 
     <!-- move_base navigation -->
 
