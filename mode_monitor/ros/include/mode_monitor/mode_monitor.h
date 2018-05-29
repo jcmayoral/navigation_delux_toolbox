@@ -24,6 +24,7 @@ namespace mode_monitor{
       ros::Publisher point_debug_;
       bool is_costmap_received_;
       nav_msgs::OccupancyGrid grid_msg_;
+      double unknown_value_;
 
   };
 };

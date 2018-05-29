@@ -2,11 +2,11 @@
 #include <ros/ros.h>
 
 namespace mode_monitor{
-  ModeMonitor::ModeMonitor(): costmap_(), tf_(ros::Duration(10)), is_costmap_received_(false){
+  ModeMonitor::ModeMonitor(): costmap_(), unknown_value_(99), tf_(ros::Duration(10)), is_costmap_received_(false){
     ROS_INFO("Constructor");
     ros::NodeHandle nh("");
     //"/move_base/global_costmap/costmap"
-    costmap_sub_ = nh.subscribe("/map", 1, &ModeMonitor::costmapCB,this);
+    costmap_sub_ = nh.subscribe("/move_base/global_costmap/costmap", 1, &ModeMonitor::costmapCB,this);
     point_debug_ = nh.advertise<nav_msgs::OccupancyGrid>("point_debug", 1);
     ros::spinOnce();
     //ros::spin();
@@ -50,7 +50,12 @@ namespace mode_monitor{
     costmap_->worldToMap(wx, wy,mx, my);
 
     grid_msg_.data[costmap_->getIndex(mx,my)] = 100; //TODO
-    ROS_INFO_STREAM("COST " << (int)costmap_->getCost(mx,my)<< " coord " << mx << ", "<<my);
+
+    double cost = (double)costmap_->getCost(mx,my);
+
+    if (cost == unknown_value_){
+      ROS_WARN_STREAM("COST " << cost << " coord " << mx << ", "<<my);
+    }
 
     grid_msg_.header.stamp = ros::Time::now();
     //point.data = &array;
