@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   costmap_2d
   nav_msgs
   tf
+  roslaunch_mode_switcher
 )
 
 include_directories(
@@ -25,6 +26,7 @@ catkin_package(
    costmap_2d
    tf
    nav_msgs
+   roslaunch_mode_switcher
 )
 
 add_library(mode_monitor_ros

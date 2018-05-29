@@ -1,13 +1,14 @@
-  #include <mode_monitor/mode_monitor.h>
+#include <mode_monitor/mode_monitor.h>
 #include <ros/ros.h>
 
 namespace mode_monitor{
-  ModeMonitor::ModeMonitor(): costmap_(), unknown_value_(99), tf_(ros::Duration(10)), is_costmap_received_(false){
+  ModeMonitor::ModeMonitor(): costmap_(), unknown_value_(99), tf_(ros::Duration(10)), is_costmap_received_(false), current_mode_("Navigation"){
     ROS_INFO("Constructor");
     ros::NodeHandle nh("");
     //"/move_base/global_costmap/costmap"
     costmap_sub_ = nh.subscribe("/move_base/global_costmap/costmap", 1, &ModeMonitor::costmapCB,this);
     point_debug_ = nh.advertise<nav_msgs::OccupancyGrid>("point_debug", 1);
+    mode_client_ = nh.serviceClient<roslaunch_mode_switcher::ModeSwitcher>("request_mode");
     ros::spinOnce();
     //ros::spin();
   }
@@ -55,6 +56,23 @@ namespace mode_monitor{
 
     if (cost == unknown_value_){
       ROS_WARN_STREAM("COST " << cost << " coord " << mx << ", "<<my);
+
+      roslaunch_mode_switcher::ModeSwitcher req;
+
+      if (!current_mode_.compare("Navigation")){
+        req.request.request_mode.data = "Slam";
+        current_mode_ = "Slam";
+      }
+      else{
+        req.request.request_mode.data = "Navigation";
+        current_mode_ = "Navigation";
+      }
+
+      if (!mode_client_.call(req)){
+        ROS_ERROR("Mode Switcher Request Failed");
+      }
+
+      else
     }
 
     grid_msg_.header.stamp = ros::Time::now();
