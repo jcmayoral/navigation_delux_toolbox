@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="nav_mode" default="experimental" />
+  <arg name="robot" default="$(optenv ROBOT !!ROBOT NOT SET!!)" />
+  <arg name="robot_env" default="stage-cave" />
+
+  <include file="$(find navigation_delux_toolbox_launch)/2dnav_$(arg nav_mode).launch">
+    <arg name="robot" value="$(arg robot)" />
+    <arg name="robot_env" value="$(arg robot_env)" />
+  </include>
+
+
+</launch>
