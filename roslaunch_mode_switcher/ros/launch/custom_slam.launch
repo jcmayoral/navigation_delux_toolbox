@@ -8,17 +8,10 @@
   <!--include file="$(find mir_2dslam)/ros/launch/2dslam.launch">
   </include-->
 
-  	 <!-- run scan unifier -->
-    	<node pkg="cob_scan_unifier" type="scan_unifier_node" name="scan_unifier" output="log">
-    		<rosparam param="input_scans">["/scan_front","/scan_rear"]</rosparam>
-    		<param name="loop_rate" value="20.0"/>
-      		<remap from="scan_unified" to="/scan_unified"/>
-    	</node>
-
 
   	<!-- launch hector_mapping-->
   	<node pkg="hector_mapping" type="hector_mapping" name="hector_mapping">
-  		<remap from="scan" to="/scan_unified"/>
+  		<remap from="scan" to="/base_scan"/>
       <param name="_map_size" value="2048"/>
       <param name="_map_resolution" value="0.05"/>
       <param name="_pub_map_odom_transform" value="false"/>
