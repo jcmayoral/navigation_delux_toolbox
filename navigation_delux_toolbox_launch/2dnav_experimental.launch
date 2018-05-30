@@ -3,6 +3,8 @@
 
     <arg name="robot" default="$(optenv ROBOT !!ROBOT NOT SET!!)" />
     <arg name="robot_env" default="stage-cave" />
+    <arg name="input_scans" default="[base_scan_0, base_scan_1]"/>
+    <arg name="output_scan" default="/scan_unified"/>
 
     <!-- delete old parameters -->
     <rosparam command="delete" param="/move_base"/>
@@ -12,10 +14,16 @@
         <arg name="map" value="$(arg robot_env)" />
     </include>
 
+    <!-- run scan unifier -->
+    <node pkg="cob_scan_unifier" type="scan_unifier_node" name="scan_unifier" output="log">
+        <rosparam subst_value="True" param="input_scans">$(arg input_scans)</rosparam>
+        <remap from="scan_unified" to="$(arg output_scan)"/>
+    </node>
+
     <!-- particle filter localization -->
     <!--- start AMCL -->
     <node pkg="amcl" type="amcl" name="amcl">
-        <remap from="scan" to="base_scan"/>
+        <remap from="scan" to="$(arg output_scan)"/>
     </node>
 
     <!-- move_base navigation -->
