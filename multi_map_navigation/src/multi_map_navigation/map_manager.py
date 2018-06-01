@@ -15,6 +15,8 @@ class MultiMapManager(object):
         self.list_maps = ["kitchen", "living-room",'dining-room','shelf']
         self.current_map_name_pub = rospy.Publisher("multi_map_server/map_name", String, queue_size=1)
         self.wormhole_marker_pub = rospy.Publisher('wormhole_marker', MarkerArray, queue_size=1)
+        self.waiting_marker_pub = rospy.Publisher('waiting_point', MarkerArray, queue_size=1)
+
         self.n_markers = 0
 
         self.transition_action_clients = {}
@@ -40,6 +42,7 @@ class MultiMapManager(object):
             self.transition_action_clients[client] = cli
 
         self.definition_file = None
+
         if rospy.has_param('~definition_file'):
             self.definition_file = rospy.get_param("~definition_file")
         else:
@@ -48,8 +51,9 @@ class MultiMapManager(object):
 
         if (not self.loadyaml(self.definition_file)):
             return
-        #rospy.loginfo("Waiting for position")
-        #rospy.sleep(3)
+
+        rospy.loginfo("Waiting for position")
+        rospy.sleep(3)
         self.get_robot_position()
         self.ready = True
 
@@ -96,8 +100,14 @@ class MultiMapManager(object):
         n_markers = 0
         #rospy.sleep(2)
         marker_array = MarkerArray()
+        waiting_area_marker_array = MarkerArray()
+        elevator_type = False
+
         for i in self.wormholes:
             if i["name"] == self.current_map:
+                if i["type"] == "elevator_blast":
+                    elevator_type = True
+
                 for j in i["locations"]:
                     wormhole_marker = Marker()
                     wormhole_marker.header.frame_id = "map"
@@ -128,7 +138,36 @@ class MultiMapManager(object):
                     marker_array.markers.append(wormhole_marker)
                     n_markers = n_markers + 1
 
-        self.wormhole_marker_pub.publish(marker_array)
+                    if elevator_type:
+                        waiting_pose = [ float(i) for i in j["waiting_point"][0].split()]
+                        waiting_area_marker = Marker()
+                        waiting_area_marker.header.frame_id = self.robot_namespace + "/map"
+                        waiting_area_marker.header.stamp = rospy.get_rostime()
+                        waiting_area_marker.ns = "multimna"
+                        waiting_area_marker.type = Marker.CYLINDER
+                        waiting_area_marker.action = Marker.MODIFY
+                        waiting_area_marker.id = n_markers
+                        waiting_area_marker.pose.position.x = waiting_pose[0]
+                        waiting_area_marker.pose.position.y = waiting_pose[1]
+                        waiting_area_marker.pose.position.z = 0.25
+                        waiting_area_marker.pose.orientation.x = 0.0
+                        waiting_area_marker.pose.orientation.y = 0.0
+                        waiting_area_marker.pose.orientation.z = 0.0
+                        waiting_area_marker.pose.orientation.w = 1.0
+                        waiting_area_marker.scale.x = 0.15 * 2.0 # fixed radius size for wait_area goals
+                        waiting_area_marker.scale.y = 0.15 * 2.0
+                        waiting_area_marker.scale.z = 1
+                        waiting_area_marker.color.a = 0.7
+                        waiting_area_marker.color.r = 1.0
+                        waiting_area_marker.color.g = 0.0
+                        waiting_area_marker.color.b = 0.0
+                        waiting_area_marker_array.markers.append(waiting_area_marker)
+
+        if elevator_type:
+            self.waiting_marker_pub.publish(waiting_area_marker_array)
+
+        if len(marker_array.markers) > 0:
+            self.wormhole_marker_pub.publish(marker_array)
 
 
         if (self.n_markers > n_markers):
@@ -141,7 +180,7 @@ class MultiMapManager(object):
                 waiting_area_marker = Marker.DELETE
                 #waiting_area_marker.id = self.n_markers
 
-                #self.wormhole_marker_pub.publish(wormhole_marker)
+                self.wormhole_marker_pub.publish(wormhole_marker)
         self.n_markers = n_markers
 
     def loadyaml(self, filename):

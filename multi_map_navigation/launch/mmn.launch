@@ -11,21 +11,18 @@
 
   <!-- Name - Must be consistent with spawn name [To edit]:  -->
   <!-- Launch elevator manager -->
-  <!--node pkg="multi_map_navigation" type="elevator_manager.py" name="elevator_blast" output="screen"/-->
-  <node pkg="multi_map_navigation" type="multimap_transition.py" name="custom" output="screen"/>
+  <node pkg="multi_map_navigation" type="elevator_manager.py" name="elevator_blast_manager" output="screen"/>
+  <node pkg="multi_map_navigation" type="multimap_transition.py" name="custom_transition_manager" output="screen"/>
 
   <!-- NAVIGATION -->
   <!-- visualize navigation goals -->
   <!-- DWA Local Planner -->
-  <include file="$(find multi_map_navigation)/launch/2dnav.launch">
-        <arg name="robot" value="$(arg robot)" />
-        <arg name="robot_env" value="$(arg robot_env)" />
-        <arg name="nav_mode" value="multimap" />
-  </include>
+  <!--include file="$(find navigation_delux_toolbox_launch)/experimental.launch">
+  </include-->
 
   <node pkg="multi_map_navigation" type="multi_map_navigation_manager.py" name="my_multi_map_navigation" output="screen">
-      <param name="definition_file" value="$(find multi_map_navigation)/yaml/real_config.yaml" />
+      <param name="definition_file" value="$(find multi_map_navigation)/yaml/elevator_config.yaml" />
       <param name="base_frame" value="base_link"/>
-      <param name="transition_types" value="custom" />
+      <param name="transition_types" value="custom elevator_blast" />
   </node>
 </launch>

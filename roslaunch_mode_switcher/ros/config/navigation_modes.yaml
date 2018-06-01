@@ -1,6 +1,6 @@
 Slam:
-  package: mir_2dslam
-  path_to_file: ros/launch/2dslam.launch
+  package: roslaunch_mode_switcher
+  path_to_file: ros/launch/custom_slam.launch
 Navigation:
   package: multi_map_server
   path_to_file: launch/multi_map_server.launch

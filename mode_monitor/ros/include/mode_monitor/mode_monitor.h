@@ -4,6 +4,7 @@
  #include <geometry_msgs/PoseStamped.h>
  #include <geometry_msgs/PointStamped.h>
  #include <tf/tf.h>
+#include <roslaunch_mode_switcher/ModeSwitcher.h>
 
 namespace mode_monitor{
 
@@ -24,6 +25,9 @@ namespace mode_monitor{
       ros::Publisher point_debug_;
       bool is_costmap_received_;
       nav_msgs::OccupancyGrid grid_msg_;
+      double unknown_value_;
 
+      std::String current_mode_;
+      ros::ServiceClient mode_client_;
   };
 };
