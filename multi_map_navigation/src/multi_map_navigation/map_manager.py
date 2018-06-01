@@ -48,8 +48,8 @@ class MultiMapManager(object):
 
         if (not self.loadyaml(self.definition_file)):
             return
-        #rospy.loginfo("Waiting for position")
-        #rospy.sleep(3)
+        rospy.loginfo("Waiting for position")
+        rospy.sleep(3)
         self.get_robot_position()
         self.ready = True
 

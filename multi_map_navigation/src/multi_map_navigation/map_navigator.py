@@ -104,14 +104,16 @@ class MultiMapNavigationNavigator():
 
         self.graph.add_edge(goal.goal_map,"end",weight = 0)
         #self.plotGraph()
+        rospy.loginfo ("Looking for path from  %s to %s", self.manager.current_map , goal.goal_map)
 
         try:
             path = nx.astar_path(self.graph, "start", "end")
         except:
-            rospy.logerr("PAth NOT FOUND")
+            rospy.logerr("Path NOT FOUND")
             return None
 
-        print "PATH FOUND", path , " from " , self.manager.current_map , " to " , goal.goal_map
+        rospy.loginfo ("PATH FOUND")
+        print "The found path is ", path
 
         #removing start and end
         path = path[1:-1]
@@ -122,41 +124,56 @@ class MultiMapNavigationNavigator():
         old_pos = [None, None]
         old_angle = None
 
-        state = 0
-
         while (goal.goal_map != self.manager.current_map):
-            #wormhole
-            name = path[0][path[0].find("_") + 1:]
-            #wormhole = None
+
+            #Look For Wormhole
+            wormhole = None
+
             for i in self.manager.wormholes:
-                print i["name"], self.manager.current_map, "pashfpiashfpi"
                 if (i["name"] == self.manager.current_map):
                     wormhole = i
-            print "looking for" , self.manager.current_map ,"in" , wormhole["locations"]
+
+            if wormhole is None:
+                rospy.logerr("Wormhole " + self.manager.current_map + " Not Defined")
+                return None
+
+
+            if not (len(path) > 1):
+                rospy.logerr("Path can not be length 0")
+                return None
+
+
+            location = None
+
             for w in wormhole["locations"]:
-              print w
-              print "error", path[1]
+              #Querrying Next Map
               if path[1] is w["map"]:
                   location = w
+
+            if location is None:
+                rospy.logerr("Location  " + path[1] + " Not Defined n Wormhole")
+                return None
+
             pos = location["position"]
-            print "Send Position " , pos
+
+            rospy.loginfo("Send Position To Move_Base " )
+
             position_pose = PoseStamped()
             position_pose.header.frame_id = "map"
             position_pose.pose.position.x = pos[0]
             position_pose.pose.position.y = pos[1]
             position_pose.pose.orientation.w = 1
             self.current_goal_pub.publish(position_pose)
-            #pos = [graph.node[path[1]]["x"],graph.node[path[1]]["y"]]
-            mapname = path[0]
-            wormhole_type = "normal"
+
+            current_map = path[0]
             wormhole_goal = None
 
-            if (len(path) > 1):
-                wormhole_type = wormhole["type"]
-                wormhole_goal = MultiMapNavigationTransitionGoal()
-                wormhole_goal.wormhole = yaml.dump(wormhole)
-                wormhole_goal.start = path[0].split("_")[0]
-                wormhole_goal.end = path[1].split("_")[0]
+
+            wormhole_type = wormhole["type"]
+            wormhole_goal = MultiMapNavigationTransitionGoal()
+            wormhole_goal.wormhole = yaml.dump(wormhole)
+            wormhole_goal.start = path[0].split("_")[0]
+            wormhole_goal.end = path[1].split("_")[0]
 
             angle = 0
             radius = None
@@ -165,36 +182,34 @@ class MultiMapNavigationNavigator():
             offset[0] = offset[0] - pos[0]
             offset[1] = offset[1] - pos[1]
 
-            if (state is 0):
-                self.drivingToWormhole(location, wormhole)
-                self.manager.current_map = mapname
-                state = 1
+            self.drivingToWormhole(location, wormhole)
+            #self.manager.current_map = mapname
+            rospy.loginfo("Skipped move base because the goal location is the current location")
+            if (wormhole_type == "custom"):
+                rospy.loginfo("Transition: custom")
+                rospy.loginfo("Going to" + path[1])
+                custom_goal = MultiMapServerGoal()
+                custom_goal.map_name = path[1]
+                cli = self.manager.transition_action_clients[wormhole_type]
+                cli.send_goal(custom_goal)
+                cli.wait_for_result()
+                self.manager.current_map = path[1]
+            if(wormhole_type == "elevator_blast" and wormhole_goal != None):
+                rospy.loginfo("Transition: Elevator Blast")
+                next_floor = self.find_target_floor(wormhole, goal.goal_map)
+                self.target_elevator(next_floor, wormhole["name"])
+            if (wormhole_type != "normal" and wormhole_goal != None and wormhole_type != "custom"):
+                rospy.loginfo("Transition: " + str(wormhole_type))
+                cli = self.manager.transition_action_clients[wormhole_type]
+                #print wormhole_goal
+                cli.send_goal(wormhole_goal)
+                cli.wait_for_result()
 
-            if (state is 1):
-                rospy.loginfo("Skipped move base because the goal location is the current location")
-                if (wormhole_type == "custom"):
-                    rospy.loginfo("Transition: custom")
-                    rospy.loginfo("Going to" + path[1])
-                    custom_goal = MultiMapServerGoal()
-                    custom_goal.map_name = path[1]
-                    cli = self.manager.transition_action_clients[wormhole_type]
-                    cli.send_goal(custom_goal)
-                    cli.wait_for_result()
-                    self.manager.current_map = path[1]
-                if(wormhole_type == "elevator_blast" and wormhole_goal != None):
-                    rospy.loginfo("Transition: Elevator Blast")
-                    next_floor = self.find_target_floor(wormhole, goal.goal_map)
-                    self.target_elevator(next_floor, wormhole["name"])
-                if (wormhole_type != "normal" and wormhole_goal != None and wormhole_type != "custom"):
-                    rospy.loginfo("Transition: " + str(wormhole_type))
-                    cli = self.manager.transition_action_clients[wormhole_type]
-                    #print wormhole_goal
-                    cli.send_goal(wormhole_goal)
-                    cli.wait_for_result()
-                state = 2
-                self.afterSwitchingMap(mapname, location, wormhole, offset)
-                path = path[1:]
-                mapname = path[0]
+            self.afterSwitchingMap(current_map, location, wormhole, offset)
+
+            #Remove First Node of Path
+            path = path[1:]
+            current_map = path[0]
 
         #Get to the end point
         msg = MoveBaseGoal()
@@ -341,8 +356,8 @@ class MultiMapNavigationNavigator():
         if "angle" in location:
             angle = location["angle"]
 
-        msg.pose.pose.position.x = pos[0] + math.cos(offset_angle) * offset_radius
-        msg.pose.pose.position.y = pos[1] + math.sin(offset_angle) * offset_radius
+        msg.pose.pose.position.x = pos[0] #+ math.cos(offset_angle) * offset_radius
+        msg.pose.pose.position.y = pos[1] #+ math.sin(offset_angle) * offset_radius
         msg.pose.pose.position.z = 0.0
 
         roll, pitch, yaw = tf.transformations.euler_from_quaternion( \
@@ -357,14 +372,15 @@ class MultiMapNavigationNavigator():
         msg.pose.pose.orientation.z = quat[2]
         msg.pose.pose.orientation.w = quat[3]
 
-        msg.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.25, 0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0, 0.0, 0.0,
-                               0.06853891945200942]
-        emptySrv = Empty()
+        #msg.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0,
+        #                       0.0, 0.25, 0.0, 0.0, 0.0, 0.0,
+        #                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        #                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        #                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        #                       0.0, 0.0, 0.0, 0.0, 0.0,
+        #                       0.06853891945200942]
+
+        #emptySrv = Empty()
         # rospy.wait_for_service("/global_localization")
         #
         # try:
@@ -397,7 +413,8 @@ class MultiMapNavigationNavigator():
                 return None;
 
             self.target_elevator(location["floor"], wormhole["name"]) # call elevator to current floor
-
+        else:
+            rospy.loginfo("Wormhole Type" + wormhole["type"] + " detected")
         angle = 0
         radius = 0
 
