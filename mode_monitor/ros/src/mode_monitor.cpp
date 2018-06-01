@@ -45,7 +45,6 @@ namespace mode_monitor{
     }
   }
 
-
   void ModeMonitor::check(double wx, double wy){
     unsigned int mx, my = 0;
     costmap_->worldToMap(wx, wy,mx, my);
@@ -71,10 +70,7 @@ namespace mode_monitor{
       if (!mode_client_.call(req)){
         ROS_ERROR("Mode Switcher Request Failed");
       }
-
-      else
     }
-
     grid_msg_.header.stamp = ros::Time::now();
     //point.data = &array;
     point_debug_.publish(grid_msg_);
