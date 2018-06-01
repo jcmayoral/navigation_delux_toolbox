@@ -12,7 +12,7 @@ maps:
 
 wormholes:
   - name: kitchen
-    type: normal
+    type: custom
     radius: 0.5
     locations:
       - map: dining-room
@@ -22,12 +22,22 @@ wormholes:
         position: [2.0, 2.0]
         waiting_point: [2.0, 2.0]
   - name: living-room
-    type: normal
+    type: custom
     radius: 0.5
     locations:
       - map: shelf
         position: [1.0, 3,0]
         waiting_point: [1.0, 3,0]
       - map: dining-room
-        position: [-2.0, -2.0]
+        position: [0.065, 0.831]
+        waiting_point: [-2.0, -2.0]
+  - name: dining-room
+    type: custom
+    radius: 0.5
+    locations:
+      - map: shelf
+        position: [1.0, 3,0]
+        waiting_point: [1.0, 3,0]
+      - map: living-room
+        position: [0.065, 0.831]
         waiting_point: [-2.0, -2.0]
