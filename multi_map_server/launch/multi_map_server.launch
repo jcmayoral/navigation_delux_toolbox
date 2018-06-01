@@ -5,7 +5,7 @@
 
 
   <node pkg="multi_map_server" type="multi_map_server"
-        name="mode_manager_server" args="$(arg map)" output="screen" >
+        name="multi_map_server" args="$(arg map)" output="screen" >
       <param name="maps_package" type="str" value="$(arg maps_package)"/>
   </node>
 </launch>
