@@ -34,7 +34,7 @@ class MultiMapControl:
         self.ac_server = actionlib.SimpleActionServer("custom", MultiMapServerAction, execute_cb=self.call_multiMap, auto_start=False)
         rospy.loginfo("Initializing Multimap Transition")
         # This relies on the 'dynamic_gazebo_models' package
-        self.pub_map = rospy.Publisher('mode_manager_server/map_name', String, queue_size=1)
+        self.pub_map = rospy.Publisher('multi_map_server/map_name', String, queue_size=1)
         self.ac_server.start()
         rospy.loginfo("Started actionlib server")
 
