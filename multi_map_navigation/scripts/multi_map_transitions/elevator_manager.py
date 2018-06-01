@@ -47,7 +47,6 @@ class ElevatorControl:
         # This relies on the 'dynamic_gazebo_models' package
         self.elevatorId = "elevator1" # default elevator control
         self.sub_est_floor = rospy.Subscriber('/elevator_controller/' + self.elevatorId + '/estimated_current_floor', Int32, self.estimated_floor_cb)
-        self.door_status = rospy.Subscriber('/elevator_controller/' + self.elevatorId + '/doorStatus', Int32, self.estimated_floor_cb)
         self.known_elevator_pose = False
 
         self.pub_active_elevators = rospy.Publisher('/elevator_controller/active', UInt32MultiArray, queue_size=10)
