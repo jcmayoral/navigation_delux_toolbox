@@ -23,7 +23,7 @@ catkin_python_setup()
 add_action_files(DIRECTORY action FILES MultiMapNavigation.action MultiMapNavigationTransition.action MultiMapNavigationTargetElevator.action MultiMapServer.action)
 
 # generate service files
-add_service_files(DIRECTORY srv FILES SetMap.srv ReinitManager.srv)
+add_service_files(DIRECTORY srv FILES ReinitManager.srv)
 
 # generate message files
 add_message_files(DIRECTORY msg FILES)
