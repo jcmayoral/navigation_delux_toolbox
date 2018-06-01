@@ -11,7 +11,7 @@
 
   <!-- Name - Must be consistent with spawn name [To edit]:  -->
   <!-- Launch elevator manager -->
-  <!--node pkg="multi_map_navigation" type="elevator_manager.py" name="elevator_blast" output="screen"/-->
+  <node pkg="multi_map_navigation" type="elevator_manager.py" name="elevator_blast_manager" output="screen"/>
   <node pkg="multi_map_navigation" type="multimap_transition.py" name="custom_transition_manager" output="screen"/>
 
   <!-- NAVIGATION -->
@@ -21,8 +21,8 @@
   </include-->
 
   <node pkg="multi_map_navigation" type="multi_map_navigation_manager.py" name="my_multi_map_navigation" output="screen">
-      <param name="definition_file" value="$(find multi_map_navigation)/yaml/config2.yaml" />
+      <param name="definition_file" value="$(find multi_map_navigation)/yaml/elevator_config.yaml" />
       <param name="base_frame" value="base_link"/>
-      <param name="transition_types" value="custom" />
+      <param name="transition_types" value="custom elevator_blast" />
   </node>
 </launch>

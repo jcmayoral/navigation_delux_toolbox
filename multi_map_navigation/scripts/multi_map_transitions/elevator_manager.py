@@ -31,7 +31,6 @@ from geometry_msgs.msg import *
 from multi_map_navigation.msg import *
 from trajectory_msgs.msg import *
 import actionlib
-import cv
 from std_msgs.msg import Int32
 from std_msgs.msg import UInt8
 from std_msgs.msg import Bool
@@ -46,9 +45,10 @@ class ElevatorControl:
         rospy.loginfo("Initializing Elevator Manager")
 
         # This relies on the 'dynamic_gazebo_models' package
-
         self.elevatorId = "elevator1" # default elevator control
         self.sub_est_floor = rospy.Subscriber('/elevator_controller/' + self.elevatorId + '/estimated_current_floor', Int32, self.estimated_floor_cb)
+        self.door_status = rospy.Subscriber('/elevator_controller/' + self.elevatorId + '/doorStatus', Int32, self.estimated_floor_cb)
+        self.known_elevator_pose = False
 
         self.pub_active_elevators = rospy.Publisher('/elevator_controller/active', UInt32MultiArray, queue_size=10)
         self.pub_target_floor = rospy.Publisher('/elevator_controller/target_floor', Int32, queue_size=10)
@@ -68,15 +68,18 @@ class ElevatorControl:
 
         if (self.elevatorId != msg.elevatorId):
             self.elevatorId = msg.elevatorId
-            self.sub_est_floor.shutdown()
+            self.sub_est_floor.unregister()
             self.sub_est_floor = rospy.Subscriber('/elevator_controller/' + self.elevatorId + '/estimated_current_floor', Int32, self.estimated_floor_cb)
 
-        print (self.elevatorId, "here")
-        self.curr_elevator_ref.data = {int(self.elevatorId.replace("elevator", ""))}
+        self.curr_elevator_ref.data = {self.elevatorId}
 
         self.pub_active_elevators.publish(self.curr_elevator_ref)
 
         rospy.loginfo("Waiting for elevator to finish...")
+
+        while not self.known_elevator_pose:
+            pass
+
         while self.new_target.data != self.currElevatorPos:
             self.pub_target_floor.publish(self.new_target) # republish in case of data drop
             # pass
@@ -88,6 +91,7 @@ class ElevatorControl:
 
     def estimated_floor_cb(self, msg):
         self.currElevatorPos = msg.data
+        self.known_elevator_pose = True
 
 if __name__ == '__main__':
     rospy.init_node("elevator_blast")

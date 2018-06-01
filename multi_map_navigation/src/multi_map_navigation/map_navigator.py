@@ -88,6 +88,8 @@ class MultiMapNavigationNavigator():
 
         #Create the graph for each of the wormholes
         self.resetGraph()
+        #self.plotGraph()
+
         self.graph.add_edge("start",self.manager.current_map,weight = 0)
 
         for w in self.manager.wormholes:
@@ -103,7 +105,6 @@ class MultiMapNavigationNavigator():
         self.graph.node[goal.goal_map]['y'] = goal.target_pose.pose.position.y
 
         self.graph.add_edge(goal.goal_map,"end",weight = 0)
-        #self.plotGraph()
         rospy.loginfo ("Looking for path from  %s to %s", self.manager.current_map , goal.goal_map)
 
         try:
@@ -194,11 +195,12 @@ class MultiMapNavigationNavigator():
                 cli.send_goal(custom_goal)
                 cli.wait_for_result()
                 self.manager.current_map = path[1]
-            if(wormhole_type == "elevator_blast" and wormhole_goal != None):
+            elif(wormhole_type == "elevator_blast" and wormhole_goal != None):
                 rospy.loginfo("Transition: Elevator Blast")
                 next_floor = self.find_target_floor(wormhole, goal.goal_map)
                 self.target_elevator(next_floor, wormhole["name"])
-            if (wormhole_type != "normal" and wormhole_goal != None and wormhole_type != "custom"):
+                self.manager.current_map = path[1]
+            else:
                 rospy.loginfo("Transition: " + str(wormhole_type))
                 cli = self.manager.transition_action_clients[wormhole_type]
                 #print wormhole_goal
@@ -211,7 +213,8 @@ class MultiMapNavigationNavigator():
             path = path[1:]
             current_map = path[0]
 
-        #Get to the end point
+        #Get to the end pointf
+        rospy.loginfo("In final Map")
         msg = MoveBaseGoal()
         msg.target_pose = goal.target_pose
 
@@ -232,9 +235,10 @@ class MultiMapNavigationNavigator():
         return target_loc["floor"]
 
     def target_elevator(self, target_floor, elevator_id):
+        print "elevator_id", elevator_id
         elevator_target = multi_map_navigation.msg.MultiMapNavigationTargetElevatorGoal()
         elevator_target.elevatorTargetFloor = target_floor
-        elevator_target.elevatorId = elevator_id
+        elevator_target.elevatorId = str(elevator_id)
 
         client = self.manager.transition_action_clients["elevator_blast"]
         client.send_goal_and_wait(elevator_target, execute_timeout=rospy.Duration.from_sec(600.0),  preempt_timeout=rospy.Duration.from_sec(700.0)) # maximum wait time for elevator: ~10 minutes
@@ -412,7 +416,7 @@ class MultiMapNavigationNavigator():
                 rospy.loginfo("Goal aborted!")
                 return None;
 
-            self.target_elevator(location["floor"], wormhole["name"]) # call elevator to current floor
+            self.target_elevator(location["floor"], location["elevator_id"]) # call elevator to current floor
         else:
             rospy.loginfo("Wormhole Type" + wormhole["type"] + " detected")
         angle = 0
