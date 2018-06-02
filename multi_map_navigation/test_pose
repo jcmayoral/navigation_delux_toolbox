@@ -21,7 +21,7 @@ goal:
       frame_id: 'map'
     pose:
       position:
-        x: 1.412
+        x: -1.412
         y: 1.3340
         z: 0.0
       orientation:
