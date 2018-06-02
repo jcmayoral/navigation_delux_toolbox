@@ -134,6 +134,7 @@ class MultiMapNavigationNavigator():
         rospy.loginfo ("Looking for path from  %s to %s", self.manager.current_map , goal.goal_map)
 
         try:
+            #Find Shortest Path
             path = nx.astar_path(self.graph, "start", "end")
         except:
             rospy.logerr("Path NOT FOUND")
@@ -156,14 +157,15 @@ class MultiMapNavigationNavigator():
             #Look For Wormhole
             wormhole = None
 
+            #Find Wormhole
             for i in self.manager.wormholes:
                 if (i["name"] == self.manager.current_map):
                     wormhole = i
 
+            #If wormhole not found throw error
             if wormhole is None:
                 rospy.logerr("Wormhole " + self.manager.current_map + " Not Defined")
                 return None
-
 
             if not (len(path) > 1):
                 rospy.logerr("Path can not be length 0")
@@ -216,7 +218,7 @@ class MultiMapNavigationNavigator():
             rospy.loginfo("Going to" + path[1])
             custom_goal = MultiMapServerGoal()
             custom_goal.map_name = path[1]
-            cli = self.manager.transition_action_clients[wormhole_type]
+            cli = self.manager.transition_action_clients["custom"]
             cli.send_goal(custom_goal)
             cli.wait_for_result()
             self.manager.current_map = path[1]
@@ -382,25 +384,6 @@ class MultiMapNavigationNavigator():
         msg.pose.pose.orientation.z = quat[2]
         msg.pose.pose.orientation.w = quat[3]
 
-        #msg.pose.covariance = [0.25, 0.0, 0.0, 0.0, 0.0, 0.0,
-        #                       0.0, 0.25, 0.0, 0.0, 0.0, 0.0,
-        #                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        #                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        #                       0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        #                       0.0, 0.0, 0.0, 0.0, 0.0,
-        #                       0.06853891945200942]
-
-        #emptySrv = Empty()
-        # rospy.wait_for_service("/global_localization")
-        #
-        # try:
-        #     init_amcl = rospy.ServiceProxy("/global_localization", Empty)
-        #     init_amcl()
-        #     pass
-        # except:
-        #     rospy.logerr("Could not re-initialize AMCL")
-        #
-        rospy.loginfo("%s pretend to publsh ", msg.pose.pose)
         self.pose_pub.publish(msg)
 
         rospy.sleep(3) #FIXME: come up with an alternative approach to know when AMCL is done
