@@ -25,9 +25,6 @@ add_action_files(DIRECTORY action FILES MultiMapNavigation.action MultiMapNaviga
 # generate service files
 add_service_files(DIRECTORY srv FILES ReinitManager.srv)
 
-# generate message files
-add_message_files(DIRECTORY msg FILES)
-
 # messages dependencies
 generate_messages(DEPENDENCIES std_msgs actionlib_msgs geometry_msgs)
 
@@ -35,5 +32,3 @@ generate_messages(DEPENDENCIES std_msgs actionlib_msgs geometry_msgs)
 catkin_package(
   CATKIN_DEPENDS rospy actionlib visualization_msgs move_base_msgs nav_msgs std_msgs message_runtime nodelet rviz tf map_server
 )
-
-
