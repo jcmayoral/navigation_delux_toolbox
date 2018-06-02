@@ -6,7 +6,8 @@ import yaml
 import networkx as nx
 import actionlib
 import actionlib_msgs
-from std_msgs.msg import Bool
+import numpy
+from std_msgs.msg import Bool, String
 from std_srvs.srv import Empty
 
 import matplotlib.pyplot as plt
@@ -29,24 +30,49 @@ class MultiMapNavigationNavigator():
         self.robot_namespace = manager.robot_namespace
 
         move_base_name = "move_base"
+        self.robot_id = "Lucy"
+
+        #Move Base Related
         if rospy.has_param('~move_base_action'):
             move_base_name = rospy.get_param("~move_base_action")
+
+        if rospy.has_param('~robot_id'):
+            self.robot_id = rospy.get_param("~robot_id")
+
         self.move_base = actionlib.SimpleActionClient(move_base_name, MoveBaseAction)
         self.move_base.wait_for_server()
+
+        #This is the Server To Access MultiMapNavigation
         self.action_server = actionlib.SimpleActionServer("multi_map_navigation/move", MultiMapNavigationAction,
                                                           execute_cb=self.execute_cb, auto_start=False)
+
+        #Relocalize in New Map
         self.pose_pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1)
+
+        #Debug
+        self.cuurent_floor = None
+
         self.current_goal_pub = rospy.Publisher("/goal_pose", PoseStamped, queue_size=1)
 
         while not self.manager.ready:
             pass
 
-        self.action_server.start()
 
+        #Elevator
+        self.elevator_available = numpy.zeros(3, dtype=bool)
+
+        for i in range(3):
+            rospy.Subscriber('/elevator_controller/' + str(i) + '/available_for', String, self.availableElevatorFor,i)
+
+        self.action_server.start()
         self.preempt_goal = False
         self.cancel_goals_sub = rospy.Subscriber("/cancel_all_goals", Bool, self.cancel_cb)
 
         self.createGraph()
+
+    def availableElevatorFor(self, msg, index):
+        if msg.data == self.robot_id:
+            self.elevator_available[index] = msg.data
 
     def createGraph(self):
         self.graph = nx.Graph()
@@ -169,7 +195,6 @@ class MultiMapNavigationNavigator():
             current_map = path[0]
             wormhole_goal = None
 
-
             wormhole_type = wormhole["type"]
             wormhole_goal = MultiMapNavigationTransitionGoal()
             wormhole_goal.wormhole = yaml.dump(wormhole)
@@ -183,29 +208,19 @@ class MultiMapNavigationNavigator():
             offset[0] = offset[0] - pos[0]
             offset[1] = offset[1] - pos[1]
 
+            #in case of elevator wait in waiting aree until elevator is available then go to Location
             self.drivingToWormhole(location, wormhole)
             #self.manager.current_map = mapname
-            rospy.loginfo("Skipped move base because the goal location is the current location")
-            if (wormhole_type == "custom"):
-                rospy.loginfo("Transition: custom")
-                rospy.loginfo("Going to" + path[1])
-                custom_goal = MultiMapServerGoal()
-                custom_goal.map_name = path[1]
-                cli = self.manager.transition_action_clients[wormhole_type]
-                cli.send_goal(custom_goal)
-                cli.wait_for_result()
-                self.manager.current_map = path[1]
-            elif(wormhole_type == "elevator_blast" and wormhole_goal != None):
-                rospy.loginfo("Transition: Elevator Blast")
-                next_floor = self.find_target_floor(wormhole, goal.goal_map)
-                self.target_elevator(next_floor, wormhole["name"])
-                self.manager.current_map = path[1]
-            else:
-                rospy.loginfo("Transition: " + str(wormhole_type))
-                cli = self.manager.transition_action_clients[wormhole_type]
-                #print wormhole_goal
-                cli.send_goal(wormhole_goal)
-                cli.wait_for_result()
+            #rospy.loginfo("Skipped move base because the goal location is the current location")
+
+            rospy.loginfo("Going to" + path[1])
+            custom_goal = MultiMapServerGoal()
+            custom_goal.map_name = path[1]
+            cli = self.manager.transition_action_clients[wormhole_type]
+            cli.send_goal(custom_goal)
+            cli.wait_for_result()
+            self.manager.current_map = path[1]
+
 
             self.afterSwitchingMap(current_map, location, wormhole, offset)
 
@@ -225,15 +240,6 @@ class MultiMapNavigationNavigator():
 
         self.action_server.set_succeeded(MultiMapNavigationResult())
 
-    def find_target_floor(self, wormhole, goal_map):
-        target_loc = None
-
-        for i in wormhole["locations"]:
-            if (i["map"] == goal_map):
-                target_loc = i
-
-        return target_loc["floor"]
-
     def target_elevator(self, target_floor, elevator_id):
         print "elevator_id", elevator_id
         elevator_target = multi_map_navigation.msg.MultiMapNavigationTargetElevatorGoal()
@@ -243,9 +249,9 @@ class MultiMapNavigationNavigator():
         client = self.manager.transition_action_clients["elevator_blast"]
         client.send_goal_and_wait(elevator_target, execute_timeout=rospy.Duration.from_sec(600.0),  preempt_timeout=rospy.Duration.from_sec(700.0)) # maximum wait time for elevator: ~10 minutes
 
-    def go_to_waiting_point(self, waiting_point):
+    def go_to(self, waiting_point, place_name):
 
-        rospy.loginfo("But heading to waiting area first")
+        rospy.loginfo("But heading to %s", place_name)
 
         pos_str = waiting_point[0]
         waiting_pose = [float(x) for x in pos_str.split()]
@@ -411,11 +417,13 @@ class MultiMapNavigationNavigator():
         rospy.loginfo("Heading towards a wormhole")
 
         if (wormhole["type"] == "elevator_blast"):
-            wasGoalSuccessful = self.go_to_waiting_point(location["waiting_point"])
+            wasGoalSuccessful = self.go_to(location["waiting_point"], "waiting_point")
             if not wasGoalSuccessful:
                 rospy.loginfo("Goal aborted!")
                 return None;
 
+            #GO TO ELEVATOR
+            self.check_elevator(location["elevator_id"])
             self.target_elevator(location["floor"], location["elevator_id"]) # call elevator to current floor
         else:
             rospy.loginfo("Wormhole Type" + wormhole["type"] + " detected")
@@ -453,3 +461,8 @@ class MultiMapNavigationNavigator():
             return None;
 
         rospy.loginfo("Done move_base")
+
+    def check_elevator(self, elevator_id):
+        rospy.loginfo("Wait For Elevator %s", str(elevator_id))
+        while not self.elevator_available[elevator_id]:
+            pass
