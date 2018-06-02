@@ -36,8 +36,4 @@
   <run_depend>multi_map_server</run_depend>
   <run_depend>tf</run_depend>
 
-  <export>
-    <rviz plugin="${prefix}/plugin_description.xml"/>
-  </export>
-
 </package>
