@@ -49,6 +49,9 @@ class MultiMapNavigationNavigator():
         #Relocalize in New Map
         self.pose_pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1)
 
+        #Elevator Request
+        self.elevator_request_pub = rospy.Publisher('elevator_request', elevatorRequest, queue_size=1)
+
         #Debug
         self.cuurent_floor = None
 
@@ -407,6 +410,12 @@ class MultiMapNavigationNavigator():
 
         #Waiting Point is inside the elevator
         if (wormhole["type"] == "elevator_blast"):
+            elevator_request = elevatorRequest()
+            elevator_request.header.stamp = rospy.Time.now()
+            elevator_request.robot_id = self.robot_id
+            elevator_requested_floor = location["floor"]
+            self.elevator_request_pub.publish(elevator_request)
+
             wasGoalSuccessful = self.go_to(location["waiting_point"], "waiting_point")
 
             if not wasGoalSuccessful:
