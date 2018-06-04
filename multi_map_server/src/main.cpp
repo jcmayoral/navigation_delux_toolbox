@@ -273,8 +273,9 @@ int main(int argc, char **argv)
   std::string path = ros::package::getPath(package);
   std::cout << path;
   Manager manager(nh, path);
+  ROS_INFO_STREAM("MAP SELECTED" << argv[1]);
   manager.res = (argc == 2) ? 0.0 : atof(argv[2]);
-  manager.fname = manager.path_ + argv[1] + "/map.yaml";
+  manager.fname = argv[1];
   ROS_INFO_STREAM("Path " << manager.fname);
   manager.map_name = argv[1];
   ROS_INFO_STREAM("Map Name " << manager.map_name);
