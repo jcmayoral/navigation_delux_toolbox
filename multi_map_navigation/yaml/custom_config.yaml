@@ -1,4 +1,4 @@
-ostart_map: living-room
+start_map: living-room
 
 maps:
   - name: kitchen

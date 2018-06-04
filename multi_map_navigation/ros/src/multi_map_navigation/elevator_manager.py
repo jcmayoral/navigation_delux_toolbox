@@ -35,9 +35,6 @@ from std_msgs.msg import Int32
 from std_msgs.msg import UInt8
 from std_msgs.msg import Bool
 from std_msgs.msg import UInt32MultiArray
-from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
-import roslib.packages
 
 class ElevatorControl:
     def __init__(self):
@@ -65,6 +62,7 @@ class ElevatorControl:
     def do_elevator(self, msg):
         self.new_target.data = msg.elevatorTargetFloor
 
+        #Subscribe to Elevator
         if (self.elevatorId != msg.elevatorId):
             self.elevatorId = msg.elevatorId
             self.sub_est_floor.unregister()
@@ -72,6 +70,7 @@ class ElevatorControl:
 
         self.curr_elevator_ref.data = {self.elevatorId}
 
+        #Activate Elevator
         self.pub_active_elevators.publish(self.curr_elevator_ref)
 
         rospy.loginfo("Waiting for elevator to finish...")
@@ -91,9 +90,3 @@ class ElevatorControl:
     def estimated_floor_cb(self, msg):
         self.currElevatorPos = msg.data
         self.known_elevator_pose = True
-
-if __name__ == '__main__':
-    rospy.init_node("elevator_blast")
-
-    blast = ElevatorControl()
-    rospy.spin()

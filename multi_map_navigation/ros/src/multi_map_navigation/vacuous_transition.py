@@ -12,10 +12,3 @@ def vacuous(data):
     global server
     ROS_INFO("Transition Server :)")
     server.set_succeeded(MultiMapNavigationTransitionResult())
-
-if (__name__ == '__main__'):
-   client = sys.argv[1]
-   rospy.init_node(client)
-   server = actionlib.SimpleActionServer(client, MultiMapNavigationTransitionAction, execute_cb = vacuous, auto_start = False)
-   server.start()
-   rospy.spin()

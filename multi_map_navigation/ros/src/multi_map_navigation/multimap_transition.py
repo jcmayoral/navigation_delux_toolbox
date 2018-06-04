@@ -53,8 +53,3 @@ class MultiMapControl:
             self.pub_map.publish(msg.map_name)
             rospy.loginfo("Waiting transition to finish...")
             self.ac_server.set_succeeded()
-
-if __name__ == '__main__':
-    rospy.init_node("custom")
-    blast = MultiMapControl()
-    rospy.spin()
