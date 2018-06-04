@@ -247,7 +247,7 @@ class MultiMapNavigationNavigator():
 
         self.action_server.set_succeeded(MultiMapNavigationResult())
 
-    def target_elevator(self, target_floor, elevator_id):
+    def wait_for_elevator(self, target_floor, elevator_id):
         print "elevator_id", elevator_id
         elevator_target = multi_map_navigation.msg.MultiMapNavigationTargetElevatorGoal()
         elevator_target.elevatorTargetFloor = target_floor
@@ -348,6 +348,7 @@ class MultiMapNavigationNavigator():
                         if (self.move_base.get_state() == GoalStatus.SUCCEEDED):
                             bad = False
                     bad = True #Make sure we are still bad for actual motion
+            rospy.loginfo("Position Reached")
         return True
 
     def afterSwitchingMap(self,mapname, location, wormhole, offset):
@@ -404,15 +405,16 @@ class MultiMapNavigationNavigator():
         #Create the goal for the next waypoint (at the target)
         rospy.loginfo("Heading towards a wormhole")
 
+        #Waiting Point is inside the elevator
         if (wormhole["type"] == "elevator_blast"):
-            #GO TO ELEVATOR
-            self.check_elevator(location["elevator_id"])
             wasGoalSuccessful = self.go_to(location["waiting_point"], "waiting_point")
+
             if not wasGoalSuccessful:
                 rospy.loginfo("Goal aborted!")
                 return None;
 
-            self.target_elevator(location["floor"], location["elevator_id"]) # call elevator to current floor
+            #GO TO ELEVATOR
+            self.check_elevator_availability(location["elevator_id"])
         else:
             rospy.loginfo("Wormhole Type" + wormhole["type"] + " detected")
         angle = 0
@@ -447,10 +449,15 @@ class MultiMapNavigationNavigator():
         if not wasGoalSuccessful:
             rospy.loginfo("Goal aborted!")
             return None;
+        else:
+            rospy.loginfo("Position Reacheds")
+
+        if (wormhole["type"] == "elevator_blast"):
+            self.wait_for_elevator(location["floor"], location["elevator_id"]) # call elevator to current floor
 
         rospy.loginfo("Done move_base")
 
-    def check_elevator(self, elevator_id):
+    def check_elevator_availability(self, elevator_id):
         rospy.loginfo("Wait For Elevator %s", str(elevator_id))
         while not self.elevator_available[elevator_id]:
             pass
