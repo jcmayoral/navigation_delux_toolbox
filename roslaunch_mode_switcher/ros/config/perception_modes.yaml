@@ -1,0 +1,9 @@
+Camera:
+  package: gr_depth_processing
+  path_to_file: launch/gr_depth_processing.launch
+LidarGPU:
+  package: pcl_gpu_tools
+  path_to_file: launch/pcl_gpu_tools.launch
+LidarCPU:
+  package: gr_pointcloud_filter
+  path_to_file: launch/gr_pointcloud_filter_nodelet.launch

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>roslaunch_mode_switcher</name>
-  <version>1.2.0</version>
+  <version>1.2.1</version>
   <description>An service to switch between navigation modes, i.e. SLAM and navigate</description>
 
   <author email="jose.mayoral@smail.inf.h-brs.de">Jose Mayoral</author>

@@ -1,9 +1,0 @@
-Slam:
-  package: roslaunch_mode_switcher
-  path_to_file: ros/launch/custom_slam.launch
-Navigation:
-  package: multi_map_server
-  path_to_file: launch/multi_map_server.launch
-SaveMap:
-  package: mcr_navigation_tools
-  path_to_file: ros/launch/map_server.launch
