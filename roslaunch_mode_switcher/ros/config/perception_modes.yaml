@@ -1,6 +1,6 @@
 Camera:
   package: gr_depth_processing
-  path_to_file: launch/gr_depth_processing.launch
+  path_to_file: launch/gr_depth_procesing_nodelet.launch
 LidarGPU:
   package: pcl_gpu_tools
   path_to_file: launch/pcl_gpu_tools.launch

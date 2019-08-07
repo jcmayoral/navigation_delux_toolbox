@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!-- Note: this is an example launch file, do not modify. -->
 <launch>
-  <arg name="config_file" default="$(find roslaunch_mode_switcher)/ros/config/navigation_modes.yaml" />
+  <arg name="config_file" default="$(find roslaunch_mode_switcher)/ros/config/perception_modes.yaml" />
 
 
   <node pkg="roslaunch_mode_switcher" type="mode_manager_test"
