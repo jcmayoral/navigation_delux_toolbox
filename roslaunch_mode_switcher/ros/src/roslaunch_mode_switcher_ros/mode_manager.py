@@ -16,43 +16,41 @@ class ModeManager:
         self.available_modes = dict()
         stream.close()
 
-        for key, value in self.modes.iteritems():
-            print key
-            if key == default:
-                print "jere"
-                self.available_modes[key] = RosLaunchMode(package = value['package'],
-                                                      route_to_launch_file = value['path_to_file'])
-        self.current_mode = default
+        self.current_mode = None
         self.is_stop_requested = False
-        self.available_modes[default].start()
         self.request_mode = rospy.Service('request_mode', ModeSwitcher, self.runService)
 
+        self.find_modes()
+        self.execute_mode(default)
+
+    def find_modes(self):
+        for key, value in self.modes.iteritems():
+            self.available_modes[key] = value
+
+    def execute_mode(self,mode):
+        self.current_mode = RosLaunchMode(package = self.available_modes[mode]['package'],
+                                          route_to_launch_file = self.available_modes[mode]['path_to_file'])
+        rospy.sleep(1.0)
+        return self.current_mode.start()
 
     def runService(self,req):
 
         resp = ModeSwitcherResponse()
-
-        print (req.request_mode.data, type(req.request_mode.data))
+        #Close all
         if req.request_mode.data == "Stop":
-            print "here"
             self.is_stop_requested = True
             resp.succeeded.data = True
             return resp
 
-        for key, value in self.modes.iteritems():
-            if key == req.request_mode.data:
-                self.available_modes[key] = RosLaunchMode(package = value['package'],
-                                                      route_to_launch_file = value['path_to_file'])
+        self.current_mode.stop()
+        rospy.logerr("Previous mode has stopped")
+        self.current_mode = None
+        rospy.sleep(2.0)
 
-        if req.request_mode.data == "SaveMap":
-            self.available_modes[req.request_mode.data].start()
-            rospy.loginfo("Saving map")
-            rospy.sleep(3)
-            return resp
-
-        self.available_modes[self.current_mode].stop()
-        self.available_modes[req.request_mode.data].start()
+        rospy.logwarn("Current mode is starting")
+        resp.succeeded = self.execute_mode(req.request_mode.data)
         self.current_mode = req.request_mode.data
-        print("DONE")
+
+        resp.succeeded.data = True
 
         return resp
