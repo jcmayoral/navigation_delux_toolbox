@@ -1,3 +1,4 @@
+#! /usr/bin/python
 from __future__ import print_function
 import rospy
 import smach
@@ -7,7 +8,7 @@ from geometry_msgs.msg import AccelStamped, Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, LaserScan, Imu
 from std_msgs.msg import Empty, String, Header
-from fusion_msgs.msg import sensorFusionMsg, controllerFusionMsg, monitorStatusMsg
+#from fusion_msgs.msg import sensorFusionMsg, controllerFusionMsg, monitorStatusMsg
 from dynamic_reconfigure.client import Client
 
 import numpy as np

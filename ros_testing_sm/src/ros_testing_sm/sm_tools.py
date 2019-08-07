@@ -1,4 +1,4 @@
-
+#! /usr/bin/python
 import rospy
 import smach
 import smach_ros
@@ -8,9 +8,8 @@ from geometry_msgs.msg import AccelStamped, Twist
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, LaserScan
 from std_msgs.msg import Empty, String
-from fusion_msgs.msg import sensorFusionMsg
 from dynamic_reconfigure.client import Client
-from common_states import MyBagReader, RestartReader
+from bag_states import MyBagReader, RestartReader
 import matplotlib.pyplot as plt
 
 def monitor_cb(ud, msg):
