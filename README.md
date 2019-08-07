@@ -11,12 +11,4 @@ On development
 ![output](https://user-images.githubusercontent.com/14136339/38874322-190dfffa-4258-11e8-8825-1d64800b36aa.gif)
 
 
-* multi_map_server: A modified map_saver to swap maps on the fly.
-
-* multi_map_navigation: Multi_map_navigation node based on https://github.com/MohitShridhar/multi_map_navigation
-
-* Expected Nodes.
--> Multi Robot HMI.
--> Trajectory Follower.
-
 
