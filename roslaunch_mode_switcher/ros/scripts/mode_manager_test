@@ -4,7 +4,7 @@ import rospy
 
 if __name__ == '__main__':
   rospy.init_node('manager_mode_switcher_test', anonymous=True)
-  mode = ModeManager(config_file='perception_modes.yaml', default='LidarCPU')
+  mode = ModeManager(config_file='perception_modes.yaml', default='Camera')
   #mode.available_modes[mode.current_mode].start()
 
   while not mode.is_stop_requested:

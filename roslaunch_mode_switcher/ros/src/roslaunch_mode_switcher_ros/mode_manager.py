@@ -48,9 +48,7 @@ class ModeManager:
         rospy.sleep(2.0)
 
         rospy.logwarn("Current mode is starting")
-        resp.succeeded = self.execute_mode(req.request_mode.data)
-        self.current_mode = req.request_mode.data
-
+        resp.succeeded.data = self.execute_mode(req.request_mode.data)
         resp.succeeded.data = True
 
         return resp
