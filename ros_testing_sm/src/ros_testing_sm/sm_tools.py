@@ -31,7 +31,6 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
   sm.userdata.window_size_array = list()
   sm.userdata.results_ = dict()
   sm.userdata.acc_results = init_dict()
-  print (sm.userdata.acc_results)
   sm.userdata.cam_results = init_dict()
   sm.userdata.odom_results = init_dict()
   sm.userdata.imu_results = init_dict()
@@ -39,8 +38,8 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
   sm.userdata.mic_results = init_dict()
 
   reading_sm = smach.StateMachine(outcomes=['END_READING_SM'])
-  reading_sm.userdata.sm_counter = 1
   reading_sm.userdata.path = path
+  reading_sm.userdata.stop = False
   reading_sm.userdata.bag_family = common_string #TODO
 
 
@@ -56,14 +55,11 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
 
   with reading_sm:
       smach.StateMachine.add('RESET_READING', RestartReader(),
-                     transitions={'NEXT_BAG':'READING'},
-                     remapping={'bar_counter_in':'sm_counter'})
-      smach.StateMachine.add('READING', MyBagReader(limit = time_limit, max_bag_file = max_bag_file),
+                     transitions={'NEXT_BAG':'READING'})
+      smach.StateMachine.add('READING', MyBagReader(max_bag_file = max_bag_file),
                              transitions={'RESTART_READER':'RESET_READING',
                                           'END_READER':'END_READING_SM'},
-                             remapping={'foo_counter_in':'sm_counter',
-                                        'shared_string':'bag_family',
-                                        'foo_counter_out':'sm_counter'})
+                             remapping={'shared_string':'bag_family'})
 
 
   #montoring_sm.userdata.window_size_array = sm.window_size_array
@@ -73,7 +69,7 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
                               transitions={'invalid':'MONITOR', 'valid':'WAIT_FOR_READER', 'preempted':'WAIT_FOR_READER'})
 
       while rospy.Subscriber("/sm_reset", Empty).get_num_connections() < 1:
-          print ("WAit subscriber to monitor")
+          pass
 
       smach.StateMachine.add('MONITOR', monitor_state(),
                      transitions={'NEXT_MONITOR':'WAIT_FOR_READER', 'END_MONITOR':'END_MONITORING_SM'},

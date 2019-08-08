@@ -3,90 +3,86 @@ import rospy
 import smach
 import smach_ros
 import rosbag
-from geometry_msgs.msg import AccelStamped, Twist
+import importlib
+from geometry_msgs.msg import AccelStamped, Twist, PoseArray
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import Image, LaserScan, Imu
-from std_msgs.msg import Empty, String, Header
+from sensor_msgs.msg import Image, LaserScan, Imu, PointCloud2
+from std_msgs.msg import Empty, String
 from audio_common_msgs.msg import AudioData
-import subprocess
 
 # define state ReadBag
 class MyBagReader(smach.State):
-    def __init__(self,  limit=float("inf"), max_bag_file = 100):
-        mytypes = [AccelStamped, Twist, Odometry, Odometry, LaserScan, LaserScan, LaserScan, Image,
-                   Image, Odometry, Header, Imu,AudioData, Imu]
-        #self.path = '/home/jose/ROS/thesis_ws/my_ws/rosbag_test/cob3/static_runs_2911/static_runs/' #TODO
-        #self.path = '/home/jose/ROS/thesis_ws/my_ws/rosbag_test/cob3/cob3-test-2301/'
+    def __init__(self, max_bag_file = 100):
         self.max_bag_file = max_bag_file
-        self.mytopics = ["/accel", "/cmd_vel", "/odom", "/base/odometry_controller/odom",
-            "/scan_front", "/scan_rear", "/scan_unified",
-            "/arm_cam3d/rgb/image_raw","/cam3d/rgb/image_raw",
-            "/base/odometry_controller/odometry", "/collision_label",
-            "/imu/data", "/audio", '/imu']
 
-        self.myPublishers = list()
-        self.limit = limit
+        self.myPublishers = dict()
         self.finish_pub = rospy.Publisher("finish_reading", String, queue_size=1)
-
-        for topic_name, msg_type in zip(self.mytopics,mytypes):
-            publisher = rospy.Publisher(topic_name, msg_type, queue_size=1)
-            self.myPublishers.append([publisher,topic_name])
 
         smach.State.__init__(self,
                              outcomes=['RESTART_READER','END_READER'],
-                             input_keys=['foo_counter_in', 'shared_string', 'path'],
-                             output_keys=['foo_counter_out'])
+                             input_keys=['foo_counter_in', 'shared_string', 'path', 'stop'],
+                             output_keys=['foo_counter_out', 'stop'])
+
+    def load_topics_and_types(self):
+        topics_and_types = self.bag.get_type_and_topic_info()
+        list_zip = zip(topics_and_types.topics.keys(),topics_and_types.msg_types.keys())
+
+        for topic_name, msg_type in list_zip:
+            module_name, class_type = msg_type.split('/')
+            m = importlib.import_module(module_name+".msg")
+            publisher = rospy.Publisher(topic_name,  getattr(m, class_type), queue_size=10)
+            self.myPublishers[topic_name] = publisher
+
+        rospy.loginfo("FINISH")
+        rospy.sleep(1)
 
     def execute(self, userdata):
         rospy.loginfo('Executing state Reader')
 
-        self.is_file_ok = False
-        max_bag_file = self.max_bag_file
-        while not self.is_file_ok:
-            try:
-                file_name = userdata.path + userdata.shared_string + str(userdata.foo_counter_in)+".bag"
-                command = "rosbag play " + file_name
-                self.p = subprocess.Popen(command, stdin=subprocess.PIPE, shell=True)
-                #self.bag = rosbag.Bag(file_name)
-                print ("file_name" , file_name )
-                self.is_file_ok = True
-            except:
-                rospy.loginfo("Skipping File " + str(userdata.foo_counter_in))
-                userdata.foo_counter_out = userdata.foo_counter_in + 1
-
-                if userdata.foo_counter_in > max_bag_file:
-                    fb = String()
-                    fb.data = "END_BAG"
-                    userdata.foo_counter_out = 1
-                    self.finish_pub.publish(fb)
-                    rospy.sleep(2)
-                    return 'END_READER'
-                #print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-
-        rospy.loginfo(self.p)
-        self.p.wait()
-
-        if userdata.foo_counter_in < max_bag_file:  #n number of bag files // TODO default 35
-            userdata.foo_counter_out = userdata.foo_counter_in + 1
-            fb = String()
-            fb.data = "NEXT_BAG"
-            self.finish_pub.publish(fb)
-            rospy.sleep(2)
-            return 'RESTART_READER'
-        else:
+        if userdata.stop:
             fb = String()
             fb.data = "END_BAG"
-            userdata.foo_counter_out = 1
             self.finish_pub.publish(fb)
             rospy.sleep(2)
             return 'END_READER'
 
 
+        max_bag_file = self.max_bag_file
+
+        try:
+            file_name = userdata.path + userdata.shared_string + ".bag"
+            self.bag = rosbag.Bag(file_name)
+            print ("file_name" , file_name )
+        except:
+            rospy.loginfo("Skipping File " + str(file_name))
+
+            fb = String()
+            fb.data = "END_BAG"
+            self.finish_pub.publish(fb)
+            rospy.sleep(2)
+            return 'END_READER'
+
+        self.load_topics_and_types()
+
+        for topic, m, t in self.bag.read_messages():
+            try:
+                self.myPublishers[topic].publish(m)
+                #rospy.sleep(0.1)
+            except:
+                pass
+
+        fb = String()
+        fb.data = "NEXT_BAG"
+        self.finish_pub.publish(fb)
+        rospy.sleep(2)
+        userdata.stop = True
+        return 'RESTART_READER'
+
+
 class RestartReader(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['NEXT_BAG'],
-                             input_keys=['bar_counter_in'])
+                             outcomes=['NEXT_BAG'],)
         #rospy.spin()
         self.monitor_reset_pub = rospy.Publisher('/sm_reset', Empty, queue_size=1)
         rospy.sleep(0.2)
@@ -100,4 +96,3 @@ class RestartReader(smach.State):
         print ("Send EMPTY")
         rospy.sleep(2)
         return 'NEXT_BAG'
-
