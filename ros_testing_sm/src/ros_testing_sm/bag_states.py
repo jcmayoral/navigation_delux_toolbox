@@ -19,9 +19,9 @@ class MyBagReader(smach.State):
         self.finish_pub = rospy.Publisher("finish_reading", String, queue_size=1)
 
         smach.State.__init__(self,
-                             outcomes=['RESTART_READER','END_READER'],
-                             input_keys=['foo_counter_in', 'shared_string', 'path', 'stop'],
-                             output_keys=['foo_counter_out', 'stop'])
+                             outcomes=['END_READER'],
+                             input_keys=['foo_counter_in', 'shared_string', 'path'],
+                             output_keys=['foo_counter_out'])
 
     def load_topics_and_types(self):
         topics_and_types = self.bag.get_type_and_topic_info()
@@ -38,14 +38,6 @@ class MyBagReader(smach.State):
 
     def execute(self, userdata):
         rospy.loginfo('Executing state Reader')
-
-        if userdata.stop:
-            fb = String()
-            fb.data = "END_BAG"
-            self.finish_pub.publish(fb)
-            rospy.sleep(2)
-            return 'END_READER'
-
 
         max_bag_file = self.max_bag_file
 
@@ -75,14 +67,15 @@ class MyBagReader(smach.State):
         fb.data = "NEXT_BAG"
         self.finish_pub.publish(fb)
         rospy.sleep(2)
-        userdata.stop = True
-        return 'RESTART_READER'
+        return 'END_READER'
 
 
 class RestartReader(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['NEXT_BAG'],)
+                             outcomes=['STOP_READING', 'NOTIFICATION_SEND'],
+                             input_keys=['stop'],
+                             output_keys=['stop'])
         #rospy.spin()
         self.monitor_reset_pub = rospy.Publisher('/sm_reset', Empty, queue_size=1)
         rospy.sleep(0.2)
@@ -95,4 +88,7 @@ class RestartReader(smach.State):
         self.monitor_reset_pub.publish(Empty())
         print ("Send EMPTY")
         rospy.sleep(2)
-        return 'NEXT_BAG'
+        if not userdata.stop:
+            userdata.stop = True
+            return 'NOTIFICATION_SEND'
+        return 'STOP_READING'

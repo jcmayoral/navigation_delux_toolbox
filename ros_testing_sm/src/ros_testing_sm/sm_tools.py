@@ -54,11 +54,10 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
 
 
   with reading_sm:
-      smach.StateMachine.add('RESET_READING', RestartReader(),
-                     transitions={'NEXT_BAG':'READING'})
+      smach.StateMachine.add('NOTIFY_MONITOR', RestartReader(),
+                     transitions={'NOTIFICATION_SEND':'READING', 'STOP_READING':'END_READING_SM'})
       smach.StateMachine.add('READING', MyBagReader(max_bag_file = max_bag_file),
-                             transitions={'RESTART_READER':'RESET_READING',
-                                          'END_READER':'END_READING_SM'},
+                             transitions={'END_READER':'NOTIFY_MONITOR'},
                              remapping={'shared_string':'bag_family'})
 
 
@@ -72,7 +71,7 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
           pass
 
       smach.StateMachine.add('MONITOR', monitor_state(),
-                     transitions={'NEXT_MONITOR':'WAIT_FOR_READER', 'END_MONITOR':'END_MONITORING_SM'},
+                     transitions={'NEXT_MONITOR':'END_MONITORING_SM', 'END_MONITOR':'END_MONITORING_SM'},
                      remapping={'result_cum':'results_',
                                 'acc_cum':'acc_results',
                                 'cam_cum':'cam_results',
@@ -84,7 +83,7 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
   # Open the container
   with sm:
       smach.StateMachine.add('SETUP', setup_state(max_window_size,step),
-                     transitions={'SETUP_DONE':'CON', 'FINISH': 'PLOT_RESULTS'},
+                     transitions={'SETUP_DONE':'CON', 'PRINT_RESULTS': 'PLOT_RESULTS', 'FINISH_SM': 'END_SM'},
                      remapping={'counter_in':'window_size',
                                 'counter_out':'window_size',
                                 'result_cum':'results_',
@@ -119,7 +118,7 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
                      transitions={#'RESTART':'CON',
                                   'END_CON':'SETUP'})
       smach.StateMachine.add('PLOT_RESULTS', plot_state(),
-                     transitions={'PLOT_DONE':'END_SM'},
+                     transitions={'PLOT_DONE':'SETUP'},
                      remapping={'data_in': 'data_in',
                                 'x_array': 'window_size_array'})
 
