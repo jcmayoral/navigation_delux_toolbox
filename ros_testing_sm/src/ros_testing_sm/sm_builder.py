@@ -9,7 +9,13 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, LaserScan
 from std_msgs.msg import Empty, String
 from dynamic_reconfigure.client import Client
-from bag_states import MyBagReader, RestartReader
+#states
+from bag_states import MyBagReader
+from setup_state import Setup
+from monitor_state import Monitor
+from plot_state import Plotter
+from monitor_notifier import MonitorNotifier
+
 import matplotlib.pyplot as plt
 
 def monitor_cb(ud, msg):
@@ -24,10 +30,11 @@ def init_dict():
     return dic
 
 # Create a SMACH state machine
-def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_limit = float("inf"), max_bag_file = 110, max_window_size = 75, start_window = 2, step=5):
+def start_sm(path, common_string, max_window_size = 75, start_window = 2, step=5):
   sm = smach.StateMachine(outcomes=['END_SM'])
+
+  #TO DELETE
   sm.userdata.window_size = start_window
-  #sm.userdata.bag_family = "cob3-attempt-2001-" #TODO
   sm.userdata.window_size_array = list()
   sm.userdata.results_ = dict()
   sm.userdata.acc_results = init_dict()
@@ -54,9 +61,9 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
 
 
   with reading_sm:
-      smach.StateMachine.add('NOTIFY_MONITOR', RestartReader(),
+      smach.StateMachine.add('NOTIFY_MONITOR', MonitorNotifier(),
                      transitions={'NOTIFICATION_SEND':'READING', 'STOP_READING':'END_READING_SM'})
-      smach.StateMachine.add('READING', MyBagReader(max_bag_file = max_bag_file),
+      smach.StateMachine.add('READING', MyBagReader(),
                              transitions={'END_READER':'NOTIFY_MONITOR'},
                              remapping={'shared_string':'bag_family'})
 
@@ -64,13 +71,13 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
   #montoring_sm.userdata.window_size_array = sm.window_size_array
 
   with monitoring_sm:
-      smach.StateMachine.add('WAIT_FOR_READER', smach_ros.MonitorState("/sm_reset", Empty, monitor_cb),
-                              transitions={'invalid':'MONITOR', 'valid':'WAIT_FOR_READER', 'preempted':'WAIT_FOR_READER'})
+      smach.StateMachine.add('WAIT_TO_START', smach_ros.MonitorState("/sm_reset", Empty, monitor_cb),
+                              transitions={'invalid':'MONITOR', 'valid':'WAIT_TO_START', 'preempted':'WAIT_TO_START'})
 
       while rospy.Subscriber("/sm_reset", Empty).get_num_connections() < 1:
           pass
 
-      smach.StateMachine.add('MONITOR', monitor_state(),
+      smach.StateMachine.add('MONITOR', Monitor(),
                      transitions={'END_MONITOR':'END_MONITORING_SM'},
                      remapping={'result_cum':'results_',
                                 'acc_cum':'acc_results',
@@ -82,7 +89,7 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
 
   # Open the container
   with sm:
-      smach.StateMachine.add('SETUP', setup_state(max_window_size,step),
+      smach.StateMachine.add('SETUP', Setup(max_window_size,step),
                      transitions={'SETUP_DONE':'CON', 'PRINT_RESULTS': 'PLOT_RESULTS', 'FINISH_SM': 'END_SM'},
                      remapping={'counter_in':'window_size',
                                 'counter_out':'window_size',
@@ -107,7 +114,6 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
       # Open the container
       with sm_con:
           # Add states to the container
-          #smach.Concurrence.add('WAIT_MONITOR', smach_ros.MonitorState("/sm_reset", Empty, monitor_cb))
           smach.Concurrence.add('READ_SM', reading_sm)
           smach.Concurrence.add('MONITORING_SM', monitoring_sm)
 
@@ -115,9 +121,8 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
       sm.userdata.data_in = monitoring_sm.userdata.results_ #TODO
 
       smach.StateMachine.add('CON', sm_con,
-                     transitions={#'RESTART':'CON',
-                                  'END_CON':'SETUP'})
-      smach.StateMachine.add('PLOT_RESULTS', plot_state(),
+                     transitions={'END_CON':'SETUP'})
+      smach.StateMachine.add('PLOT_RESULTS', Plotter(),
                      transitions={'PLOT_DONE':'SETUP'},
                      remapping={'data_in': 'data_in',
                                 'x_array': 'window_size_array'})
@@ -132,6 +137,6 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
   sis.start()
   # Execute the state machine
   outcome = sm.execute()
-  # Wait for ctrl-c to stop the application
+  #  for ctrl-c to stop the application
   plt.show()
   sis.stop()

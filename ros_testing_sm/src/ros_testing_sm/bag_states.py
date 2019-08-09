@@ -12,9 +12,7 @@ from audio_common_msgs.msg import AudioData
 
 # define state ReadBag
 class MyBagReader(smach.State):
-    def __init__(self, max_bag_file = 100):
-        self.max_bag_file = max_bag_file
-
+    def __init__(self):
         self.myPublishers = dict()
         self.finish_pub = rospy.Publisher("finish_reading", String, queue_size=1)
 
@@ -37,17 +35,13 @@ class MyBagReader(smach.State):
         rospy.sleep(1)
 
     def execute(self, userdata):
-        rospy.loginfo('Executing state Reader')
-
-        max_bag_file = self.max_bag_file
-
+        rospy.loginfo('Starting ROSBAG')
         try:
             file_name = userdata.path + userdata.shared_string + ".bag"
             self.bag = rosbag.Bag(file_name)
             print ("file_name" , file_name )
         except:
-            rospy.loginfo("Skipping File " + str(file_name))
-
+            rospy.logerr("Error Open File " + str(file_name))
             fb = String()
             fb.data = "END_BAG"
             self.finish_pub.publish(fb)
@@ -68,27 +62,3 @@ class MyBagReader(smach.State):
         self.finish_pub.publish(fb)
         rospy.sleep(2)
         return 'END_READER'
-
-
-class RestartReader(smach.State):
-    def __init__(self):
-        smach.State.__init__(self,
-                             outcomes=['STOP_READING', 'NOTIFICATION_SEND'],
-                             input_keys=['stop'],
-                             output_keys=['stop'])
-        #rospy.spin()
-        self.monitor_reset_pub = rospy.Publisher('/sm_reset', Empty, queue_size=1)
-        rospy.sleep(0.2)
-
-    def execute(self, userdata):
-        rospy.loginfo('Executing state RESTART READER')
-        #rospy.loginfo('Counter = %f'%userdata.bar_counter_in)
-
-        #print (monitor_reset_pub.get_num_connections())
-        self.monitor_reset_pub.publish(Empty())
-        print ("Send EMPTY")
-        rospy.sleep(2)
-        if not userdata.stop:
-            userdata.stop = True
-            return 'NOTIFICATION_SEND'
-        return 'STOP_READING'
