@@ -9,7 +9,6 @@ class MonitorNotifier(smach.State):
                              outcomes=['STOP_READING', 'MONITOR_NOTIFIED'],
                              input_keys=[],
                              output_keys=[])
-        #rospy.spin()
         self.monitor_start_pub = rospy.Publisher('/rosbag_play_event', Empty, queue_size=1)
         self.stop = False
         rospy.sleep(0.2)
@@ -17,9 +16,11 @@ class MonitorNotifier(smach.State):
     def execute(self, userdata):
         if not self.stop:
             self.monitor_start_pub.publish()
+            rospy.sleep(1)
             self.stop = True
             return 'MONITOR_NOTIFIED'
 
         self.stop = False
         self.monitor_start_pub.publish()
+        rospy.sleep(1)
         return 'STOP_READING'

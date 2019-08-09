@@ -12,9 +12,9 @@ class Monitor(smach.State):
                              outcomes=['END_MONITOR'],
                               input_keys=['lidar_cum', 'overall_cum', 'result_cum'],
                               output_keys=['lidar_cum', 'overall_cum', 'result_cum'])
-        rospy.Subscriber("/finish_reading", String, self.fb_cb)
+        rospy.Subscriber("/rosbag_finished", String, self.fb_cb)
         rospy.Subscriber("/ground_truth", PoseArray, self.groundtruth_cb)
-        rospy.Subscriber("/objects_detected", PoseArray, self.detection_cb, queue_size = 1000)
+        rospy.Subscriber("/detected_objects", PoseArray, self.detection_cb, queue_size = 1000)
 
         self.detected_objects = list()
         self.gt_objects = list()
@@ -72,11 +72,8 @@ class Monitor(smach.State):
         self.start_time = rospy.rostime.get_rostime().to_sec()
 
         while not self.stop_bag_request:
-            pass #TODO
-        rospy.logerr("WORK")
+            pass
 
-        rospy.sleep(0.2)
-        self.first_collision = False
 
         #print ("NEXT_MONITOR")
         print ("Ground Truths " , self.ground_truth)

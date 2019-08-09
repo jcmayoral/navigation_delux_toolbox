@@ -4,6 +4,7 @@ import smach
 import smach_ros
 import rosbag
 import importlib
+import subprocess
 from geometry_msgs.msg import AccelStamped, Twist, PoseArray
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image, LaserScan, Imu, PointCloud2
@@ -14,15 +15,16 @@ from audio_common_msgs.msg import AudioData
 class MyBagReader(smach.State):
     def __init__(self):
         self.myPublishers = dict()
-        self.finish_pub = rospy.Publisher("finish_reading", String, queue_size=1)
+        self.finish_pub = rospy.Publisher("rosbag_finished", String, queue_size=1)
 
         smach.State.__init__(self,
                              outcomes=['END_READER'],
                              input_keys=['shared_string', 'path'],
                              output_keys=[])
 
-    def load_topics_and_types(self):
-        topics_and_types = self.bag.get_type_and_topic_info()
+    def load_topics_and_types(self, file_name):
+        bag = rosbag.Bag(file_name)
+        topics_and_types = bag.get_type_and_topic_info()
         list_zip = zip(topics_and_types.topics.keys(),topics_and_types.msg_types.keys())
 
         for topic_name, msg_type in list_zip:
@@ -37,8 +39,9 @@ class MyBagReader(smach.State):
         rospy.loginfo('Starting ROSBAG')
         try:
             file_name = userdata.path + userdata.shared_string + ".bag"
-            self.bag = rosbag.Bag(file_name)
-            print ("file_name" , file_name )
+            self.load_topics_and_types(file_name)
+            command = "rosbag play " + file_name
+            rosbag_process = subprocess.Popen(command, stdin=subprocess.PIPE, shell=True)
         except:
             rospy.logerr("Error Open File " + str(file_name))
             fb = String()
@@ -47,14 +50,7 @@ class MyBagReader(smach.State):
             rospy.sleep(1)
             return 'END_READER'
 
-        self.load_topics_and_types()
-
-        for topic, m, t in self.bag.read_messages():
-            try:
-                self.myPublishers[topic].publish(m)
-            except:
-                pass
-
+        rosbag_process.wait()
         rospy.logerr("Stop bag")
 
         fb = String()
