@@ -1,6 +1,8 @@
 <launch>
   <node pkg="ros_testing_sm" type="run_testing_sm.py" name="testing_sm" output="screen"/>
 
+  <node pkg="ros_testing_sm" type="plot_detections.py" name="plot_objects" output="screen"/>
+
   <include file="$(find roslaunch_mode_switcher)/ros/launch/mode_manager_test.launch">
   </include>
 
