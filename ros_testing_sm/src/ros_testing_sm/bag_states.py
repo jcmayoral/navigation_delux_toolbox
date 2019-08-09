@@ -64,7 +64,7 @@ class MyBagReader(smach.State):
                 pass
 
         fb = String()
-        fb.data = "NEXT_BAG"
+        fb.data = "END_BAG"
         self.finish_pub.publish(fb)
         rospy.sleep(2)
         return 'END_READER'

@@ -63,7 +63,7 @@ class Plotter(smach.State):
 class Monitor(smach.State):
     def __init__(self):
         smach.State.__init__(self,
-                             outcomes=['NEXT_MONITOR', 'END_MONITOR'],
+                             outcomes=['END_MONITOR'],
                               input_keys=['acc_cum', 'cam_cum', 'odom_cum', 'imu_cum', 'lidar_cum', 'mic_cum', 'overall_cum', 'result_cum'],
                               output_keys=['acc_cum', 'cam_cum', 'odom_cum', 'imu_cum', 'lidar_cum', 'mic_cum', 'overall_cum', 'result_cum'])
         rospy.Subscriber("/finish_reading", String, self.fb_cb)
@@ -100,26 +100,19 @@ class Monitor(smach.State):
 
     def fb_cb(self,msg):
         #print ("CB", msg)
-        self.next_bag_request = True
-        self.stop_bag_request = False
 
-        if msg.data == "NEXT_BAG":
+        #print ("/n")
+        print ("Ground Truth Count ", self.ground_truth_count)
+        print ("Truth Positves Count ", self.truth_positives)
 
-            print ("current_counter" , self.current_counter)
-            #self.current_counter = 0
-        else:#FINISH
-            #print ("/n")
-            print ("Ground Truth Count ", self.ground_truth_count)
-            print ("Truth Positves Count ", self.truth_positives)
+        print (self.delays)
+        print ("Average Reaction Time ", np.nanmean(self.delays))
+        print ("False Positives ", self.false_positives_count)
+        print ("False Negatives ", self.false_negative_count)
+        print ("Total collisions detected by all observers: " , self.current_counter)
+        print ("SF Total Collisions Detected" , self.overall_count)
 
-            print (self.delays)
-            print ("Average Reaction Time ", np.nanmean(self.delays))
-            print ("False Positives ", self.false_positives_count)
-            print ("False Negatives ", self.false_negative_count)
-            print ("Total collisions detected by all observers: " , self.current_counter)
-            print ("SF Total Collisions Detected" , self.overall_count)
-
-            self.stop_bag_request = True
+        self.stop_bag_request = True
 
     def groundtruth_cb(self,msg):
         curr_time = rospy.rostime.get_rostime().to_sec()
@@ -139,71 +132,59 @@ class Monitor(smach.State):
 
     def execute(self, userdata):
 
-        self.next_bag_request = False
+        self.stop_bag_request = False
         rospy.loginfo('Executing state MONITORING')
         #rospy.sleep(20)#TODO
         self.start_time = rospy.rostime.get_rostime().to_sec()
 
-        while not self.next_bag_request:
+        while not self.stop_bag_request:
             pass #TODO
 
         rospy.sleep(0.2)
-        self.next_bag_request = False
         self.first_collision = False
 
-        if self.stop_bag_request:
+        #print ("NEXT_MONITOR")
+        print ("Ground Truths " , self.ground_truth)
+        print ("Truth Positives " , self.truth_positives)
 
-            #userdata.acc_cum.append(self.observer_counter['accelerometer_1'])
-            #userdata.cam_cum.append(self.observer_counter['cam1'])
-            #userdata.odom_cum.append(self.observer_counter['odom'])
-            #userdata.imu_cum.append(self.observer_counter['imu_1'])
-            #userdata.lidar_cum.append(self.observer_counter['lidar_1'])
-            #userdata.mic_cum.append(self.observer_counter['mic_1'])
+        collisions_detected = len(self.detection_times)
+        print ('Samples with Obejcts [%s]' % ', '.join(map(str, self.detection_times)))
+        print ("Collisions Detected " , collisions_detected)
 
-            return 'END_MONITOR'
-        else:
-            #print ("NEXT_MONITOR")
-            print ("Ground Truths " , self.ground_truth)
-            print ("Truth Positives " , self.truth_positives)
+        if collisions_detected > 0: # If collisions were detecteds
 
-            collisions_detected = len(self.detection_times)
-            print ('Samples with Obejcts [%s]' % ', '.join(map(str, self.detection_times)))
-            print ("Collisions Detected " , collisions_detected)
+            for gt in self.ground_truth:
+                delay = np.abs(np.array(self.detection_times)-gt).min() #closest collisions -> Ground Truth
+                arg_delay = np.abs(np.array(self.detection_times)-gt).argmin() # index of the closes collision detecteds
 
-            if collisions_detected > 0: # If collisions were detecteds
+                print('Closest to ', gt ," is ", delay) # Closest delay print
 
-                for gt in self.ground_truth:
-                    delay = np.abs(np.array(self.detection_times)-gt).min() #closest collisions -> Ground Truth
-                    arg_delay = np.abs(np.array(self.detection_times)-gt).argmin() # index of the closes collision detecteds
+                if delay < 0.5: #if delay is less than 1 second then it is considered as a true positive
+                    self.truth_positives = self.truth_positives + 1
+                    self.delays.append(delay)
+                    collisions_detected = collisions_detected - 1 #our counter decreased
+                    self.detection_times.remove(self.detection_times[arg_delay]) # removing from the detected collsiions
+                    #self.false_positives_count = self.false_positives_count + collisions_detected - 1 # all detections minus the closest are false positives
+                    for  c in self.detection_times:
+                        if 0.8> (c - gt) > 0.5: # if a collision detected is less than 0.7 seconds it is considered as a false positiv
+                            print ("FOUND COllision Close to Ground Truth " , c - gt)
+                            self.detection_times.remove(c) # removing from the detected collsiions
+                            collisions_detected = collisions_detected - 1 #our counter decreased
+                else:
+                    print ("Collision NOT FOUND")
+                    self.false_negative_count = self.false_negative_count + 1
 
-                    print('Closest to ', gt ," is ", delay) # Closest delay print
-
-                    if delay < 0.5: #if delay is less than 1 second then it is considered as a true positive
-                        self.truth_positives = self.truth_positives + 1
-                        self.delays.append(delay)
-                        collisions_detected = collisions_detected - 1 #our counter decreased
-                        self.detection_times.remove(self.detection_times[arg_delay]) # removing from the detected collsiions
-                        #self.false_positives_count = self.false_positives_count + collisions_detected - 1 # all detections minus the closest are false positives
-                        for  c in self.detection_times:
-                            if 0.8> (c - gt) > 0.5: # if a collision detected is less than 0.7 seconds it is considered as a false positiv
-                                print ("FOUND COllision Close to Ground Truth " , c - gt)
-                                self.detection_times.remove(c) # removing from the detected collsiions
-                                collisions_detected = collisions_detected - 1 #our counter decreased
-                    else:
-                        print ("Collision NOT FOUND")
-                        self.false_negative_count = self.false_negative_count + 1
-
-            else: #The ground truth was not detected
-                print ("ANY COLLISION DETECTED, false negatives added ", len(self.ground_truth))
-                self.false_negative_count = self.false_negative_count + len(self.ground_truth)
+        else: #The ground truth was not detected
+            print ("ANY COLLISION DETECTED, false negatives added ", len(self.ground_truth))
+            self.false_negative_count = self.false_negative_count + len(self.ground_truth)
 
 
-            print ("FALSE POSITIVES FOUND : ", collisions_detected )
-            self.false_positives_count = collisions_detected + self.false_positives_count #if best delay is bigger than 1 second then the collision was not detected
+        print ("FALSE POSITIVES FOUND : ", collisions_detected )
+        self.false_positives_count = collisions_detected + self.false_positives_count #if best delay is bigger than 1 second then the collision was not detected
 
-            self.ground_truth = list()
-            self.detection_times = list()
-            return 'NEXT_MONITOR'
+        self.ground_truth = list()
+        self.detection_times = list()
+        return 'END_MONITOR'
 
 
 

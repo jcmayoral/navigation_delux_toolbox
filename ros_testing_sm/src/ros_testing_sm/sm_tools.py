@@ -71,7 +71,7 @@ def start_sm(path, common_string, monitor_state, setup_state, plot_state, time_l
           pass
 
       smach.StateMachine.add('MONITOR', monitor_state(),
-                     transitions={'NEXT_MONITOR':'END_MONITORING_SM', 'END_MONITOR':'END_MONITORING_SM'},
+                     transitions={'END_MONITOR':'END_MONITORING_SM'},
                      remapping={'result_cum':'results_',
                                 'acc_cum':'acc_results',
                                 'cam_cum':'cam_results',
