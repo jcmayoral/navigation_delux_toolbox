@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   smach_ros
   audio_common_msgs
+  roslaunch_mode_switcher
 )
 
 catkin_python_setup()
@@ -22,6 +23,7 @@ catkin_package(
     std_msgs
     smach_ros
     audio_common_msgs
+    roslaunch_mode_switcher
 )
 
 include_directories(

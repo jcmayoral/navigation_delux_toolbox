@@ -19,6 +19,7 @@ from monitor_notifier import MonitorNotifier
 import matplotlib.pyplot as plt
 
 def monitor_cb(ud, msg):
+    rospy.logdebug("monitcb")
     return None
 
 def init_dict():
@@ -36,33 +37,37 @@ def start_sm(path, common_string, max_window_size = 75, start_window = 2, step=5
   #TO DELETE
   sm.userdata.window_size = start_window
   sm.userdata.window_size_array = list()
+  sm.userdata.current_mode = "default"
+  sm.userdata.results_shown = True
+  sm.userdata.stop = False
+
+  sm.userdata.stop_bag = False
+
   sm.userdata.results_ = dict()
   sm.userdata.acc_results = init_dict()
-  sm.userdata.cam_results = init_dict()
-  sm.userdata.odom_results = init_dict()
-  sm.userdata.imu_results = init_dict()
+  #sm.userdata.cam_results = init_dict()
+  #sm.userdata.odom_results = init_dict()
+  #sm.userdata.imu_results = init_dict()
   sm.userdata.lidar_results = init_dict()
-  sm.userdata.mic_results = init_dict()
+  #sm.userdata.mic_results = init_dict()
 
   reading_sm = smach.StateMachine(outcomes=['END_READING_SM'])
   reading_sm.userdata.path = path
-  reading_sm.userdata.stop = False
+  reading_sm.userdata.stop = sm.userdata.stop
   reading_sm.userdata.bag_family = common_string #TODO
+  reading_sm.userdata.stop_bag  = sm.userdata.stop_bag
 
 
   monitoring_sm = smach.StateMachine(outcomes=['END_MONITORING_SM'])
   monitoring_sm.userdata.results_ = sm.userdata.results_
-  monitoring_sm.userdata.acc_results = sm.userdata.acc_results
-  monitoring_sm.userdata.cam_results = sm.userdata.cam_results
-  monitoring_sm.userdata.odom_results = sm.userdata.odom_results
-  monitoring_sm.userdata.imu_results = sm.userdata.imu_results
   monitoring_sm.userdata.lidar_results = sm.userdata.lidar_results
-  monitoring_sm.userdata.mic_results = sm.userdata.mic_results
 
+  monitoring_sm.userdata.stop = sm.userdata.stop
+  monitoring_sm.userdata.stop_bag  = sm.userdata.stop_bag
 
   with reading_sm:
       smach.StateMachine.add('NOTIFY_MONITOR', MonitorNotifier(),
-                     transitions={'NOTIFICATION_SEND':'READING', 'STOP_READING':'END_READING_SM'})
+                     transitions={'MONITOR_NOTIFIED':'READING', 'STOP_READING':'END_READING_SM'})
       smach.StateMachine.add('READING', MyBagReader(),
                              transitions={'END_READER':'NOTIFY_MONITOR'},
                              remapping={'shared_string':'bag_family'})
@@ -71,10 +76,10 @@ def start_sm(path, common_string, max_window_size = 75, start_window = 2, step=5
   #montoring_sm.userdata.window_size_array = sm.window_size_array
 
   with monitoring_sm:
-      smach.StateMachine.add('WAIT_TO_START', smach_ros.MonitorState("/sm_reset", Empty, monitor_cb),
+      smach.StateMachine.add('WAIT_TO_START', smach_ros.MonitorState("/rosbag_play_event", Empty, monitor_cb, input_keys=['stop'], output_keys=['stop']),
                               transitions={'invalid':'MONITOR', 'valid':'WAIT_TO_START', 'preempted':'WAIT_TO_START'})
 
-      while rospy.Subscriber("/sm_reset", Empty).get_num_connections() < 1:
+      while rospy.Subscriber("/rosbag_play_event", Empty).get_num_connections() < 1:
           pass
 
       smach.StateMachine.add('MONITOR', Monitor(),

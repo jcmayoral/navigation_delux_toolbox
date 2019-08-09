@@ -18,8 +18,8 @@ class MyBagReader(smach.State):
 
         smach.State.__init__(self,
                              outcomes=['END_READER'],
-                             input_keys=['foo_counter_in', 'shared_string', 'path'],
-                             output_keys=['foo_counter_out'])
+                             input_keys=['foo_counter_in', 'shared_string', 'path','stop'],
+                             output_keys=['foo_counter_out', 'stop'])
 
     def load_topics_and_types(self):
         topics_and_types = self.bag.get_type_and_topic_info()
@@ -31,7 +31,6 @@ class MyBagReader(smach.State):
             publisher = rospy.Publisher(topic_name,  getattr(m, class_type), queue_size=10)
             self.myPublishers[topic_name] = publisher
 
-        rospy.loginfo("FINISH")
         rospy.sleep(1)
 
     def execute(self, userdata):
@@ -42,14 +41,16 @@ class MyBagReader(smach.State):
             print ("file_name" , file_name )
         except:
             rospy.logerr("Error Open File " + str(file_name))
+            userdata.stop = True
             fb = String()
             fb.data = "END_BAG"
             self.finish_pub.publish(fb)
-            rospy.sleep(2)
+            rospy.sleep(1)
             return 'END_READER'
 
         self.load_topics_and_types()
 
+        userdata.stop = False
         for topic, m, t in self.bag.read_messages():
             try:
                 self.myPublishers[topic].publish(m)
@@ -57,8 +58,11 @@ class MyBagReader(smach.State):
             except:
                 pass
 
+
+        rospy.logerr("Stop bag")
+
         fb = String()
         fb.data = "END_BAG"
         self.finish_pub.publish(fb)
-        rospy.sleep(2)
+        rospy.sleep(1)
         return 'END_READER'

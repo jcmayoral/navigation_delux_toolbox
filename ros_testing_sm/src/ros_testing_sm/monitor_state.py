@@ -10,8 +10,8 @@ class Monitor(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['END_MONITOR'],
-                              input_keys=['acc_cum', 'cam_cum', 'odom_cum', 'imu_cum', 'lidar_cum', 'mic_cum', 'overall_cum', 'result_cum'],
-                              output_keys=['acc_cum', 'cam_cum', 'odom_cum', 'imu_cum', 'lidar_cum', 'mic_cum', 'overall_cum', 'result_cum'])
+                              input_keys=['stop_bag','acc_cum', 'cam_cum', 'odom_cum', 'imu_cum', 'lidar_cum', 'mic_cum', 'overall_cum', 'result_cum'],
+                              output_keys=['stop_bag','acc_cum', 'cam_cum', 'odom_cum', 'imu_cum', 'lidar_cum', 'mic_cum', 'overall_cum', 'result_cum'])
         rospy.Subscriber("/finish_reading", String, self.fb_cb)
         rospy.Subscriber("/ground_truth", PoseArray, self.groundtruth_cb)
         rospy.Subscriber("/objects_detected", PoseArray, self.detection_cb, queue_size = 1000)
@@ -45,19 +45,7 @@ class Monitor(smach.State):
             self.detected_objects.append(p)
 
     def fb_cb(self,msg):
-        #print ("CB", msg)
-
-        #print ("/n")
-        print ("Ground Truth Count ", self.ground_truth_count)
-        print ("Truth Positves Count ", self.truth_positives)
-
-        print (self.delays)
-        print ("Average Reaction Time ", np.nanmean(self.delays))
-        print ("False Positives ", self.false_positives_count)
-        print ("False Negatives ", self.false_negative_count)
-        print ("Total collisions detected by all observers: " , self.current_counter)
-        print ("SF Total Collisions Detected" , self.overall_count)
-
+        rospy.logerr("Monitor has been notified that rosbag has ended")
         self.stop_bag_request = True
 
     def groundtruth_cb(self,msg):
@@ -85,6 +73,7 @@ class Monitor(smach.State):
 
         while not self.stop_bag_request:
             pass #TODO
+        rospy.logerr("WORK")
 
         rospy.sleep(0.2)
         self.first_collision = False
