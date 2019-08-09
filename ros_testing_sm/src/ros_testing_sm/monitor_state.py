@@ -10,8 +10,8 @@ class Monitor(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['END_MONITOR'],
-                              input_keys=['stop_bag','acc_cum', 'cam_cum', 'odom_cum', 'imu_cum', 'lidar_cum', 'mic_cum', 'overall_cum', 'result_cum'],
-                              output_keys=['stop_bag','acc_cum', 'cam_cum', 'odom_cum', 'imu_cum', 'lidar_cum', 'mic_cum', 'overall_cum', 'result_cum'])
+                              input_keys=['lidar_cum', 'overall_cum', 'result_cum'],
+                              output_keys=['lidar_cum', 'overall_cum', 'result_cum'])
         rospy.Subscriber("/finish_reading", String, self.fb_cb)
         rospy.Subscriber("/ground_truth", PoseArray, self.groundtruth_cb)
         rospy.Subscriber("/objects_detected", PoseArray, self.detection_cb, queue_size = 1000)

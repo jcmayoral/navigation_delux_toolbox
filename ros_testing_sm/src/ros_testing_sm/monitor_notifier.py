@@ -7,8 +7,8 @@ class MonitorNotifier(smach.State):
     def __init__(self):
         smach.State.__init__(self,
                              outcomes=['STOP_READING', 'MONITOR_NOTIFIED'],
-                             input_keys=['stop'],
-                             output_keys=['stop'])
+                             input_keys=[],
+                             output_keys=[])
         #rospy.spin()
         self.monitor_start_pub = rospy.Publisher('/rosbag_play_event', Empty, queue_size=1)
         self.stop = False
